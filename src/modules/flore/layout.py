@@ -75,11 +75,7 @@ def get_flore_layout():
                                                 html.Div(
                                                     id="flore-selector-container",
                                                     children=create_taxon_selector(initial_taxa) if initial_taxa else create_empty_selector(),
-                                                ),
-                                                html.Div(
-                                                    id="flore-selected-taxon-info",
-                                                    style={"padding": "1rem", "fontSize": "0.9rem", "color": "#666"},
-                                                ),
+                                                )
                                             ],
                                             style={
                                                 "height": "100%",
@@ -251,14 +247,13 @@ def flore_update_map_geographic(all_grids_data, active_tab):
 
 @callback(
     Output("flore-selected-taxon-store", "data"),
-    Output("flore-selected-taxon-info", "children"),
     Input("flore-taxon-selector", "value"),
     Input("flore-taxa-store", "data"),
 )
 def flore_on_taxon_change(cd_nom, taxa_data):
     """Quand le taxon sélectionné change."""
     if not cd_nom or not taxa_data:
-        return None, ""
+        return None
 
     # Trouver le taxon sélectionné
     selected_taxon = None
@@ -267,12 +262,7 @@ def flore_on_taxon_change(cd_nom, taxa_data):
             selected_taxon = t
             break
 
-    if selected_taxon:
-        info_text = f"Nom valide: {selected_taxon['nom_valide']}\nNom vernaculaire: {selected_taxon['nom_vern'] or 'N/A'}"
-    else:
-        info_text = ""
-
-    return cd_nom, info_text
+    return cd_nom
 
 
 @callback(
@@ -286,7 +276,6 @@ def flore_on_grid_click(n_clicks):
         return None
 
     trigger_id = ctx.triggered_id
-
     if isinstance(trigger_id, dict) and trigger_id.get("type") == "grid-cell":
         return trigger_id.get("index")
 
@@ -385,17 +374,17 @@ def flore_reset_species_on_grid_change(id_area):
 # Callback: quand on clique sur une espèce en mode géographique
 @callback(
     Output("flore-selected-species-geo-store", "data"),
-    Input({"type": "endangered-species-btn", "index": ALL}, "n_clicks"),
+    Input({"type": "endangered-species-btn", "cd_nom": ALL}, "n_clicks"),
     prevent_initial_call=True,
 )
-def flore_on_species_click_geo(n_clicks_list):
+def flore_on_species_click_geo(n_clicks):
     """Quand on clique sur une espèce en mode géographique."""
     if not ctx.triggered:
         return None
 
     trigger_id = ctx.triggered_id
     if isinstance(trigger_id, dict) and trigger_id.get("type") == "endangered-species-btn":
-        cd_nom = trigger_id.get("index")
+        cd_nom = trigger_id.get("cd_nom")
         logger.info(f"Espèce sélectionnée en mode géo: {cd_nom}")
         return cd_nom
 

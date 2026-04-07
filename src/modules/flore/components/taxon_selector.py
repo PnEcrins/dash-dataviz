@@ -29,11 +29,7 @@ def create_taxon_selector(taxa: List[PriorityTaxon]) -> html.Div:
                 value=None,
             ),
             html.Hr(),
-            html.Div(
-                id="flore-selected-taxon-info",
-                className="mt-3",
-                style={"fontSize": "0.9rem", "color": "#666"},
-            ),
+
         ],
         style={
             "height": "100%",
