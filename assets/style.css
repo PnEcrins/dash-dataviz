@@ -1,0 +1,194 @@
+/* Styles pour l'application Dash Rapaces */
+
+:root {
+    --primary-color: #2c3e50;
+    --accent-color: #e74c3c;
+    --light-bg: #ecf0f1;
+    --border-color: #bdc3c7;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.header p {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.year-selector-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0;
+}
+
+.year-selector-container label {
+    margin: 0;
+    font-weight: 500;
+}
+
+.year-selector-container select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.main-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    height: calc(100vh - 200px);
+    padding: 0 1rem 1rem 1rem;
+}
+
+#left-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+#map-container {
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    background-color: white;
+}
+
+.leaflet-container {
+    background-color: #f0f0f0;
+}
+
+#right-panel {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 1rem;
+}
+
+#sites-list-container,
+#visits-panel {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    overflow-y: auto;
+}
+
+#sites-list-container h5,
+#visits-panel h5 {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 0.5rem;
+}
+
+.list-group-item {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.list-group-item:hover {
+    background-color: var(--light-bg);
+}
+
+.list-group-item.active {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
+}
+
+.list-group-item h6 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.list-group-item .text-muted {
+    font-size: 0.85rem;
+}
+
+.card {
+    border: 1px solid var(--border-color);
+}
+
+.card-body {
+    padding: 0.75rem;
+}
+
+.card-body strong {
+    color: var(--primary-color);
+}
+
+/* Scrollbar styling */
+#sites-list-container::-webkit-scrollbar,
+#visits-panel::-webkit-scrollbar {
+    width: 8px;
+}
+
+#sites-list-container::-webkit-scrollbar-track,
+#visits-panel::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+#sites-list-container::-webkit-scrollbar-thumb,
+#visits-panel::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+#sites-list-container::-webkit-scrollbar-thumb:hover,
+#visits-panel::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+    .main-container {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+
+    #right-panel {
+        grid-template-rows: auto;
+    }
+
+    #sites-list-container,
+    #visits-panel {
+        max-height: 400px;
+    }
+}
+
+/* Loading spinner */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(44, 62, 80, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--accent-color);
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

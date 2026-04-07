@@ -1,0 +1,32 @@
+config.py
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.env.local
+
+# Dash
+assets/*.cache
+
+# OS
+.DS_Store
+.thumbs.db
+
+# Data
+*.json
+*.csv

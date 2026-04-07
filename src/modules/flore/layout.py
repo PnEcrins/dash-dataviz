@@ -1,0 +1,405 @@
+"""Layout principal du module Flore."""
+import logging
+from datetime import datetime
+from dash import html, dcc, callback, Input, Output, State, ctx, ALL
+from dash.exceptions import PreventUpdate
+import dash
+import dash_bootstrap_components as dbc
+
+from src.modules.flore.api.client import (
+    get_priority_flora_taxa,
+    get_observations_by_grid,
+    get_observations_in_grid,
+    get_all_grid_cells_with_danger,
+    get_endangered_species_in_grid,
+)
+from src.modules.flore.data.models import PriorityTaxon, GridCell
+from src.modules.flore.components.taxon_selector import create_taxon_selector, create_empty_selector
+from src.modules.flore.components.map import create_grid_map, create_empty_map
+from src.modules.flore.components.observations_panel import create_observations_panel, create_empty_observations_panel
+from src.modules.flore.components.endangered_species_panel import create_endangered_species_panel, create_empty_endangered_species_panel
+
+logger = logging.getLogger(__name__)
+
+# Charger les taxons au démarrage
+logger.info("⏳ Chargement initial des taxons Flore...")
+try:
+    initial_taxa = get_priority_flora_taxa()
+    logger.info(f"✓ {len(initial_taxa)} taxons de flore prioritaire chargés")
+except Exception as e:
+    logger.warning(f"⚠️ Impossible de charger taxons flore: {e}")
+    initial_taxa = []
+
+
+def get_flore_layout():
+    """Retourne le layout du module Flore."""
+    return html.Div(
+        [
+            # Stores
+            dcc.Store(id="flore-taxa-store", data=[t.to_dict() for t in initial_taxa]),
+            dcc.Store(id="flore-grids-store", data=None),
+            dcc.Store(id="flore-all-grids-store", data=None),
+            dcc.Store(id="flore-selected-grid-store", data=None),
+            dcc.Store(id="flore-selected-taxon-store", data=None),
+            dcc.Store(id="flore-selected-species-geo-store", data=None),
+
+            # Header
+            html.Div(
+                [
+                    html.H1("🌿 Flore Prioritaire", style={"margin": "0"}),
+                    html.P("Suivi de l'évolution spatiale et temporelle", style={"margin": "0"}),
+                ],
+                className="header",
+                style={
+                    "padding": "1rem",
+                    "borderBottom": "1px solid #ddd",
+                    "flexShrink": "0",
+                },
+            ),
+
+            # Layout principal - 3 colonnes
+            html.Div(
+                [
+                    # Gauche: Tabs (Entrée espèce / Entrée géographique)
+                    html.Div(
+                        [
+                            dbc.Tabs(
+                                id="flore-left-tabs",
+                                active_tab="tab-species",
+                                children=[
+                                    dbc.Tab(
+                                        label="🔍 Entrée espèce",
+                                        tab_id="tab-species",
+                                        children=html.Div(
+                                            [
+                                                html.Div(
+                                                    id="flore-selector-container",
+                                                    children=create_taxon_selector(initial_taxa) if initial_taxa else create_empty_selector(),
+                                                ),
+                                                html.Div(
+                                                    id="flore-selected-taxon-info",
+                                                    style={"padding": "1rem", "fontSize": "0.9rem", "color": "#666"},
+                                                ),
+                                            ],
+                                            style={
+                                                "height": "100%",
+                                                "padding": "1rem",
+                                                "overflowY": "auto",
+                                            },
+                                        ),
+                                    ),
+                                    dbc.Tab(
+                                        label="🗺️ Entrée géographique",
+                                        tab_id="tab-geographic",
+                                        children=html.Div(
+                                            style={
+                                                "height": "100%",
+                                                "padding": "1rem",
+                                                "overflowY": "auto",
+                                            },
+                                            children=[
+                                                html.P(
+                                                    "Mode géographique: affichage de toutes les mailles",
+                                                    className="text-muted",
+                                                ),
+                                            ]
+                                        ),
+                                    ),
+                                ],
+                            ),
+                        ],
+                        style={
+                            "flex": "0 0 25%",
+                            "minHeight": "0",
+                            "borderRight": "1px solid #ddd",
+                            "display": "flex",
+                            "flexDirection": "column",
+                        },
+                    ),
+                    # Milieu: Carte
+                    html.Div(
+                        id="flore-map-container",
+                        children=create_empty_map(),
+                        style={"flex": "1", "minHeight": "0"},
+                    ),
+                    # Droite: Observations ou Espèces en danger
+                    html.Div(
+                        id="flore-right-panel",
+                        children=create_empty_observations_panel(),
+                        style={
+                            "flex": "0 0 25%",
+                            "minHeight": "0",
+                            "borderLeft": "1px solid #ddd",
+                            "padding": "1rem",
+                            "overflowY": "auto",
+                        },
+                    ),
+                ],
+                style={"display": "flex", "gap": "0", "flex": "1", "minHeight": "0"},
+            ),
+        ],
+        style={"height": "100%", "display": "flex", "flexDirection": "column", "margin": "0", "padding": "0"},
+    )
+
+
+# Callbacks Flore
+
+# === Callbacks séparés pour chaque mode ===
+
+# --- Mode espèce : charger les grilles pour le taxon sélectionné ---
+@callback(
+    Output("flore-grids-store", "data"),
+    Input("flore-selected-taxon-store", "data"),
+    Input("flore-left-tabs", "active_tab"),
+)
+def flore_load_grids_species(cd_nom, active_tab):
+    """Charge les grilles pour le taxon sélectionné (mode espèce uniquement)."""
+    if active_tab != "tab-species":
+        return None
+    if not cd_nom:
+        return None
+    logger.info(f"🔄 [Espèce] Chargement mailles pour taxon {cd_nom}")
+    grid_cells = get_observations_by_grid(cd_nom)
+    if not grid_cells:
+        logger.warning(f"Aucune maille trouvée pour taxon {cd_nom}")
+        return None
+    grids_dict = [g.to_dict() for g in grid_cells]
+    return grids_dict
+
+# --- Mode géographique : charger toutes les grilles en danger ---
+@callback(
+    Output("flore-all-grids-store", "data"),
+    Input("flore-left-tabs", "active_tab"),
+)
+def flore_load_grids_geographic(active_tab):
+    """Charge toutes les grilles en danger (mode géographique uniquement)."""
+    if active_tab != "tab-geographic":
+        return None
+    logger.info("🔄 [Géo] Chargement de toutes les mailles en danger")
+    grid_cells = get_all_grid_cells_with_danger()
+    if not grid_cells:
+        logger.warning("Aucune maille trouvée")
+        return None
+    grids_dict = [g.to_dict() for g in grid_cells]
+    return grids_dict
+
+
+
+# --- Carte : mode espèce ---
+@callback(
+    Output("flore-map-container", "children"),
+    Input("flore-grids-store", "data"),
+    Input("flore-left-tabs", "active_tab"),
+)
+def flore_update_map_species(grids_data, active_tab):
+    """Met à jour la carte pour le mode espèce."""
+    if active_tab != "tab-species":
+        return dash.no_update
+    if not grids_data:
+        return create_empty_map()
+    grid_cells = []
+    for g in grids_data:
+        last_date = None
+        if g.get("last_observation_date"):
+            try:
+                last_date = datetime.fromisoformat(g["last_observation_date"]).date()
+            except (ValueError, TypeError):
+                last_date = None
+        grid_cells.append(GridCell(
+            id_area=g["id_area"],
+            area_name=g["area_name"],
+            geom_4326=g["geom_4326"],
+            nb_observations=g.get("nb_observations", 0),
+            last_observation_date=last_date,
+            color=g.get("color"),
+            nb_endangered_species=0,
+        ))
+    return create_grid_map(grid_cells, None, "tab-species")
+
+# --- Carte : mode géographique ---
+@callback(
+    Output("flore-map-container", "children", allow_duplicate=True),
+    Input("flore-all-grids-store", "data"),
+    Input("flore-left-tabs", "active_tab"),
+    prevent_initial_call=True,
+)
+def flore_update_map_geographic(all_grids_data, active_tab):
+    """Met à jour la carte pour le mode géographique."""
+    if active_tab != "tab-geographic":
+        return dash.no_update
+    if not all_grids_data:
+        return create_empty_map()
+    grid_cells = []
+    for g in all_grids_data:
+        last_date = None
+        if g.get("last_observation_date"):
+            try:
+                last_date = datetime.fromisoformat(g["last_observation_date"]).date()
+            except (ValueError, TypeError):
+                last_date = None
+        grid_cells.append(GridCell(
+            id_area=g["id_area"],
+            area_name=g["area_name"],
+            geom_4326=g["geom_4326"],
+            nb_observations=g.get("nb_observations", 0),
+            last_observation_date=last_date,
+            color=None,
+            nb_endangered_species=g.get("nb_endangered_species", 0),
+        ))
+    return create_grid_map(grid_cells, None, "tab-geographic")
+
+
+@callback(
+    Output("flore-selected-taxon-store", "data"),
+    Output("flore-selected-taxon-info", "children"),
+    Input("flore-taxon-selector", "value"),
+    Input("flore-taxa-store", "data"),
+)
+def flore_on_taxon_change(cd_nom, taxa_data):
+    """Quand le taxon sélectionné change."""
+    if not cd_nom or not taxa_data:
+        return None, ""
+
+    # Trouver le taxon sélectionné
+    selected_taxon = None
+    for t in taxa_data:
+        if t["cd_nom"] == cd_nom:
+            selected_taxon = t
+            break
+
+    if selected_taxon:
+        info_text = f"Nom valide: {selected_taxon['nom_valide']}\nNom vernaculaire: {selected_taxon['nom_vern'] or 'N/A'}"
+    else:
+        info_text = ""
+
+    return cd_nom, info_text
+
+
+@callback(
+    Output("flore-selected-grid-store", "data"),
+    Input({"type": "grid-cell", "index": ALL}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def flore_on_grid_click(n_clicks):
+    """Quand on clique sur une maille."""
+    if not ctx.triggered:
+        return None
+
+    trigger_id = ctx.triggered_id
+
+    if isinstance(trigger_id, dict) and trigger_id.get("type") == "grid-cell":
+        return trigger_id.get("index")
+
+    return None
+
+
+# Panneau droit: affiche observations ou espèces en danger (quand on clique)
+
+# --- Panneau droit : mode espèce ---
+@callback(
+    Output("flore-right-panel", "children"),
+    Input("flore-selected-grid-store", "data"),
+    Input("flore-selected-taxon-store", "data"),
+    Input("flore-grids-store", "data"),
+    Input("flore-left-tabs", "active_tab"),
+)
+def flore_update_right_panel_species(id_area, cd_nom, grids_data, active_tab):
+    """Met à jour le panneau droit pour le mode espèce."""
+    if active_tab != "tab-species":
+        return dash.no_update
+    if not id_area:
+        return create_empty_observations_panel()
+    # Trouver le nom de la maille
+    grid_name = f"Maille {id_area}"
+    if grids_data:
+        for g in grids_data:
+            if g.get("id_area") == id_area:
+                grid_name = g.get("area_name", f"Maille {id_area}")
+                break
+    if not cd_nom:
+        return create_empty_observations_panel()
+    logger.info(f"🔄 [Espèce] Chargement observations pour maille {id_area}, taxon {cd_nom}")
+    observations = get_observations_in_grid(id_area, cd_nom)
+    panel = create_observations_panel(grid_name, observations)
+    return panel
+
+# --- Panneau droit : mode géographique ---
+@callback(
+    Output("flore-right-panel", "children", allow_duplicate=True),
+    Input("flore-selected-grid-store", "data"),
+    Input("flore-all-grids-store", "data"),
+    Input("flore-selected-species-geo-store", "data"),
+    Input("flore-left-tabs", "active_tab"),
+    prevent_initial_call=True,
+)
+def flore_update_right_panel_geographic(id_area, all_grids_data, cd_nom_geo, active_tab):
+    """Met à jour le panneau droit pour le mode géographique."""
+    if active_tab != "tab-geographic":
+        return dash.no_update
+    if not id_area:
+        return create_empty_endangered_species_panel()
+    # Trouver le nom de la maille
+    grid_name = f"Maille {id_area}"
+    if all_grids_data:
+        for g in all_grids_data:
+            if g.get("id_area") == id_area:
+                grid_name = g.get("area_name", f"Maille {id_area}")
+                break
+    # Si une espèce est sélectionnée, afficher les observations
+    if cd_nom_geo:
+        logger.info(f"🔄 [Géo] Chargement observations pour maille {id_area}, espèce {cd_nom_geo}")
+        observations = get_observations_in_grid(id_area, cd_nom_geo)
+        panel = create_observations_panel(grid_name, observations)
+        return panel
+    # Sinon afficher la liste des espèces en danger
+    logger.info(f"🔄 [Géo] Chargement espèces en danger pour maille {id_area}")
+    endangered_species = get_endangered_species_in_grid(id_area)
+    if not endangered_species:
+        return create_empty_endangered_species_panel()
+    panel = create_endangered_species_panel(grid_name, endangered_species)
+    return panel
+
+
+# Callback: réinitialiser la sélection quand on change de tab
+@callback(
+    Output("flore-selected-grid-store", "data", allow_duplicate=True),
+    Output("flore-selected-species-geo-store", "data", allow_duplicate=True),
+    Input("flore-left-tabs", "active_tab"),
+    prevent_initial_call=True,
+)
+def flore_reset_on_tab_change(active_tab):
+    """Réinitialise les sélections quand on change de tab."""
+    return None, None
+
+
+@callback(
+    Output("flore-selected-species-geo-store", "data", allow_duplicate=True),
+    Input("flore-selected-grid-store", "data"),
+    prevent_initial_call=True,
+)
+def flore_reset_species_on_grid_change(id_area):
+    """Réinitialise la sélection d'espèce quand on change de maille."""
+    return None
+
+
+# Callback: quand on clique sur une espèce en mode géographique
+@callback(
+    Output("flore-selected-species-geo-store", "data"),
+    Input({"type": "endangered-species-btn", "index": ALL}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def flore_on_species_click_geo(n_clicks_list):
+    """Quand on clique sur une espèce en mode géographique."""
+    if not ctx.triggered:
+        return None
+
+    trigger_id = ctx.triggered_id
+    if isinstance(trigger_id, dict) and trigger_id.get("type") == "endangered-species-btn":
+        cd_nom = trigger_id.get("index")
+        logger.info(f"Espèce sélectionnée en mode géo: {cd_nom}")
+        return cd_nom
+
+    return None
+
+
+
