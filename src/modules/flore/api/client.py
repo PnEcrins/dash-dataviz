@@ -1,4 +1,5 @@
 """API client PostgreSQL pour module Flore."""
+import json
 import logging
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -114,7 +115,7 @@ def get_observations_by_grid(cd_nom: int) -> List[GridCell]:
         return []
 
 
-def get_observations_in_grid(id_area: int, cd_nom: int) -> List[Observation]:
+def get_observations_of_cd_nom(cd_nom: int) -> List[Observation]:
     """Récupère détail observations d'une maille."""
     query = """
     SELECT
@@ -124,38 +125,25 @@ def get_observations_in_grid(id_area: int, cd_nom: int) -> List[Observation]:
         s.comment_description,
         t.nom_valide,
         t.nom_vern,
-        ST_X(ST_Centroid(la.geom_4326)) as lon,
-        ST_Y(ST_Centroid(la.geom_4326)) as lat
+        ST_X(ST_Centroid(s.the_geom_4326)) as lon,
+        ST_Y(ST_Centroid(s.the_geom_4326)) as lat
     FROM gn_synthese.synthese s
     JOIN taxonomie.taxref t ON s.cd_nom = t.cd_nom
-    JOIN gn_synthese.cor_area_synthese cas ON s.id_synthese = cas.id_synthese
-    JOIN ref_geo.l_areas la ON cas.id_area = la.id_area
-    WHERE cas.id_area = %s
-        AND t.cd_nom = %s
+    WHERE t.cd_nom = %s
     ORDER BY s.date_min DESC
     """
 
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute(query, (id_area, cd_nom))
+        cur.execute(query, (cd_nom,))
 
         observations = []
-        grid_name = f"Maille {id_area}"
         for row in cur.fetchall():
-            if grid_name == f"Maille {id_area}" and row.get('area_name'):
-                grid_name = row['area_name']
-
-            date_obs = None
-            if row['date_obs']:
-                if isinstance(row['date_obs'], date):
-                    date_obs = row['date_obs']
-                else:
-                    date_obs = datetime.strptime(row['date_obs'], "%Y-%m-%d").date()
 
             observations.append(Observation(
                 id_synthese=row['id_synthese'],
-                date_obs=date_obs,
+                date_obs=row["date_obs"],
                 observers=row['observers'],
                 comment_description=row['comment_description'],
                 nom_valide=row['nom_valide'],
@@ -167,7 +155,7 @@ def get_observations_in_grid(id_area: int, cd_nom: int) -> List[Observation]:
         cur.close()
         conn.close()
 
-        logger.info(f"✓ Chargé {len(observations)} observations pour maille {id_area} pour cd_nom {cd_nom}")
+        logger.info(f"✓ Chargé {len(observations)} observations pour cd_nom {cd_nom}")
         return observations
 
     except psycopg2.Error as e:
@@ -288,3 +276,46 @@ def get_endangered_species_in_grid(id_area: int) -> List[Dict[str, Any]]:
     except psycopg2.Error as e:
         logger.error(f"Erreur BDD espèces danger: {e}")
         return []
+
+
+def get_grid_geometry(id_area: int) -> str:
+    """Récupère la géométrie GeoJSON d'une maille par son id_area en tant que Feature.
+    
+    Args:
+        id_area: ID de la maille
+        
+    Returns:
+        Feature GeoJSON (string) ou None si pas trouvée
+    """
+    query = """
+    SELECT ST_AsGeoJSON(geom_4326) as geom
+    FROM ref_geo.l_areas
+    WHERE id_area = %s
+    """
+    
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute(query, (id_area,))
+        
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        
+        if row and row['geom']:
+            # Parser la géométrie et la wrapper dans une Feature
+            geom = json.loads(row['geom'])
+            feature = {
+                "type": "Feature",
+                "geometry": geom,
+                "properties": {}
+            }
+            logger.info(f"✓ Géométrie chargée pour maille {id_area}")
+            return feature
+        else:
+            logger.warning(f"❌ Aucune géométrie trouvée pour maille {id_area}")
+            return None
+            
+    except psycopg2.Error as e:
+        logger.error(f"Erreur BDD géométrie maille {id_area}: {e}")
+        return None

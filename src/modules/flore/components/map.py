@@ -236,3 +236,82 @@ def create_empty_map() -> html.Div:
             "position": "relative",
         },
     )
+
+def create_obs_map(observations: List[Observation], geom_4326: str = None):
+    """Affiche une carte leaflet avec la maille et les observations en points."""
+    layers = []
+    bounds = None
+    
+    # Afficher la maille si fournie et calculer les bounds
+    if geom_4326:
+        try:
+            geom = geom_4326.get('geometry', {})
+            
+            # Extraire les coordonnées et calculer les bounds
+            coords = geom.get('coordinates', [])
+            flat_coords = []
+            
+            if geom['type'] == 'Polygon':
+                for ring in coords:
+                    flat_coords.extend(ring)
+            elif geom['type'] == 'MultiPolygon':
+                for poly in coords:
+                    for ring in poly:
+                        flat_coords.extend(ring)
+            
+            if flat_coords:
+                lats = [pt[1] for pt in flat_coords]
+                lons = [pt[0] for pt in flat_coords]
+                bounds = [[min(lats), min(lons)], [max(lats), max(lons)]]
+            
+            layers.append(
+                dl.GeoJSON(
+                    data=geom_4326,
+                    style={
+                        "color": "black",
+                        "weight": 2,
+                        "fillColor": "transparent",
+                        "fillOpacity": 0.0,
+                    },
+                )
+            )
+        except Exception as e:
+            pass
+    
+    # Ajoute les observations
+    for _obs in observations:
+        obs = _obs.to_dict()
+        if obs.get('lon') and obs.get('lat'):
+            layers.append(
+                dl.CircleMarker(
+                    center=[obs['lat'], obs['lon']],
+                    radius=5,
+                    color="blue",
+                    fill=True,
+                    fillOpacity=0.7,
+                    children=dl.Popup(html.Div([
+                        html.Small(f"📅 {obs.get('date_obs', '')}"),
+                        html.Br(),
+                        html.Small(f"🔍 {obs.get('nom_valide', '')}"),
+                    ]))
+                )
+            )
+    
+    # Construire la Map avec bounds si disponible
+    map_kwargs = {
+        "style": {"width": "100%", "height": "400px"},
+        "children": [
+            dl.TileLayer(url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"),
+            *layers,
+        ],
+    }
+    
+    if bounds:
+        map_kwargs["bounds"] = bounds
+    else:
+        map_kwargs["center"] = MAP_CENTER
+        map_kwargs["zoom"] = MAP_ZOOM
+    
+    return html.Div([
+        dl.Map(**map_kwargs)
+    ], style={"width": "100%", "height": "400px", "position": "relative"})

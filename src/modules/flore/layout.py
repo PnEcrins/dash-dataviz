@@ -9,13 +9,14 @@ import dash_bootstrap_components as dbc
 from src.modules.flore.api.client import (
     get_priority_flora_taxa,
     get_observations_by_grid,
-    get_observations_in_grid,
+    get_observations_of_cd_nom,
     get_all_grid_cells_with_danger,
     get_endangered_species_in_grid,
+    get_grid_geometry,
 )
 from src.modules.flore.data.models import PriorityTaxon, GridCell
-from src.modules.flore.components.taxon_selector import create_taxon_selector, create_empty_selector
-from src.modules.flore.components.map import create_grid_map, create_empty_map
+from src.modules.flore.components.taxon_selector import create_taxon_selector
+from src.modules.flore.components.map import create_grid_map, create_empty_map, create_obs_map
 from src.modules.flore.components.observations_panel import create_observations_panel, create_empty_observations_panel
 from src.modules.flore.components.endangered_species_panel import create_endangered_species_panel, create_empty_endangered_species_panel
 
@@ -39,7 +40,7 @@ def get_flore_layout():
             dcc.Store(id="flore-taxa-store", data=[t.to_dict() for t in initial_taxa]),
             dcc.Store(id="flore-grids-store", data=None),
             dcc.Store(id="flore-all-grids-store", data=None),
-            dcc.Store(id="flore-selected-grid-store", data=None),
+            dcc.Store(id="current_id_area", data=None),
             dcc.Store(id="flore-selected-taxon-store", data=None),
             dcc.Store(id="flore-selected-species-geo-store", data=None),
 
@@ -74,7 +75,7 @@ def get_flore_layout():
                                             [
                                                 html.Div(
                                                     id="flore-selector-container",
-                                                    children=create_taxon_selector(initial_taxa) if initial_taxa else create_empty_selector(),
+                                                    children=create_taxon_selector(initial_taxa),
                                                 )
                                             ],
                                             style={
@@ -133,12 +134,49 @@ def get_flore_layout():
                 ],
                 style={"display": "flex", "gap": "0", "flex": "1", "minHeight": "0"},
             ),
+            dbc.Button("Open modal", id="open", n_clicks=0),
+            dbc.Modal(
+            [
+                dbc.ModalHeader(dbc.ModalTitle("Header")),
+                dbc.ModalBody(
+                    html.Div(id="modal-map-container")  # Carte des observation pour un cd_nom
+                )
+            ],
+            id="modal",
+            is_open=False,
+        ),
         ],
         style={"height": "100%", "display": "flex", "flexDirection": "column", "margin": "0", "padding": "0"},
     )
 
 
 # Callbacks Flore
+
+# @callback(
+#     Output("modal", "is_open"),
+#     Input("open", "n_clicks"),
+#     [State("modal", "is_open")],
+# )
+# def toggle_modal(n1, is_open):
+#     """Open the modal"""
+#     if n1:
+#         return not is_open
+#     return is_open
+
+# --- Mettre à jour le sélecteur de taxons quand les taxons sont chargés ---
+@callback(
+    Output("flore-selector-container", "children"),
+    Input("flore-taxa-store", "data"),
+)
+def flore_update_taxon_selector(taxa_data):
+    """Met à jour le sélecteur de taxons quand les données arrivent du store."""
+    if not taxa_data:
+        return create_taxon_selector([])
+    
+    # Convertir les dictionnaires en objets PriorityTaxon pour créer le selector
+    taxa_objects = [PriorityTaxon(**t) for t in taxa_data]
+    return create_taxon_selector(taxa_objects)
+
 
 # === Callbacks séparés pour chaque mode ===
 
@@ -266,7 +304,7 @@ def flore_on_taxon_change(cd_nom, taxa_data):
 
 
 @callback(
-    Output("flore-selected-grid-store", "data"),
+    Output("current_id_area", "data"),
     Input({"type": "grid-cell", "index": ALL}, "n_clicks"),
     prevent_initial_call=True,
 )
@@ -284,38 +322,10 @@ def flore_on_grid_click(n_clicks):
 
 # Panneau droit: affiche observations ou espèces en danger (quand on clique)
 
-# --- Panneau droit : mode espèce ---
-@callback(
-    Output("flore-right-panel", "children"),
-    Input("flore-selected-grid-store", "data"),
-    Input("flore-selected-taxon-store", "data"),
-    Input("flore-grids-store", "data"),
-    Input("flore-left-tabs", "active_tab"),
-)
-def flore_update_right_panel_species(id_area, cd_nom, grids_data, active_tab):
-    """Met à jour le panneau droit pour le mode espèce."""
-    if active_tab != "tab-species":
-        return dash.no_update
-    if not id_area:
-        return create_empty_observations_panel()
-    # Trouver le nom de la maille
-    grid_name = f"Maille {id_area}"
-    if grids_data:
-        for g in grids_data:
-            if g.get("id_area") == id_area:
-                grid_name = g.get("area_name", f"Maille {id_area}")
-                break
-    if not cd_nom:
-        return create_empty_observations_panel()
-    logger.info(f"🔄 [Espèce] Chargement observations pour maille {id_area}, taxon {cd_nom}")
-    observations = get_observations_in_grid(id_area, cd_nom)
-    panel = create_observations_panel(grid_name, observations)
-    return panel
-
 # --- Panneau droit : mode géographique ---
 @callback(
     Output("flore-right-panel", "children", allow_duplicate=True),
-    Input("flore-selected-grid-store", "data"),
+    Input("current_id_area", "data"),
     Input("flore-all-grids-store", "data"),
     Input("flore-selected-species-geo-store", "data"),
     Input("flore-left-tabs", "active_tab"),
@@ -334,12 +344,6 @@ def flore_update_right_panel_geographic(id_area, all_grids_data, cd_nom_geo, act
             if g.get("id_area") == id_area:
                 grid_name = g.get("area_name", f"Maille {id_area}")
                 break
-    # Si une espèce est sélectionnée, afficher les observations
-    if cd_nom_geo:
-        logger.info(f"🔄 [Géo] Chargement observations pour maille {id_area}, espèce {cd_nom_geo}")
-        observations = get_observations_in_grid(id_area, cd_nom_geo)
-        panel = create_observations_panel(grid_name, observations)
-        return panel
     # Sinon afficher la liste des espèces en danger
     logger.info(f"🔄 [Géo] Chargement espèces en danger pour maille {id_area}")
     endangered_species = get_endangered_species_in_grid(id_area)
@@ -351,7 +355,7 @@ def flore_update_right_panel_geographic(id_area, all_grids_data, cd_nom_geo, act
 
 # Callback: réinitialiser la sélection quand on change de tab
 @callback(
-    Output("flore-selected-grid-store", "data", allow_duplicate=True),
+    Output("current_id_area", "data", allow_duplicate=True),
     Output("flore-selected-species-geo-store", "data", allow_duplicate=True),
     Input("flore-left-tabs", "active_tab"),
     prevent_initial_call=True,
@@ -363,7 +367,7 @@ def flore_reset_on_tab_change(active_tab):
 
 @callback(
     Output("flore-selected-species-geo-store", "data", allow_duplicate=True),
-    Input("flore-selected-grid-store", "data"),
+    Input("current_id_area", "data"),
     prevent_initial_call=True,
 )
 def flore_reset_species_on_grid_change(id_area):
@@ -373,22 +377,35 @@ def flore_reset_species_on_grid_change(id_area):
 
 # Callback: quand on clique sur une espèce en mode géographique
 @callback(
-    Output("flore-selected-species-geo-store", "data"),
+    Output("modal", "is_open"),
+    Output("modal-map-container", "children"),
     Input({"type": "endangered-species-btn", "cd_nom": ALL}, "n_clicks"),
-    prevent_initial_call=True,
+    State("modal", "is_open"),
+    State("current_id_area", "data"),
 )
-def flore_on_species_click_geo(n_clicks):
+def flore_on_species_click_geo(n_clicks, is_open, current_id_area):
     """Quand on clique sur une espèce en mode géographique."""
     if not ctx.triggered:
-        return None
+        return dash.no_update, dash.no_update
 
     trigger_id = ctx.triggered_id
     if isinstance(trigger_id, dict) and trigger_id.get("type") == "endangered-species-btn":
         cd_nom = trigger_id.get("cd_nom")
-        logger.info(f"Espèce sélectionnée en mode géo: {cd_nom}")
-        return cd_nom
+        logger.info(f"🔄 Espèce cliquée: cd_nom={cd_nom}, current_id_area={current_id_area}")
+        
+        observations = get_observations_of_cd_nom(cd_nom)
+        logger.info(f"✓ {len(observations) if observations else 0} observations chargées")
+        
+        # Charger la géométrie de la maille sélectionnée depuis la base de données
+        geom_4326 = None
+        if current_id_area:
+            geom_4326 = get_grid_geometry(current_id_area)
+        else:
+            logger.warning("❌ current_id_area est None")
+        
+        return not is_open, create_obs_map(observations, geom_4326=geom_4326)
 
-    return None
+    return dash.no_update, dash.no_update
 
 
 
