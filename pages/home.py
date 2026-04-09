@@ -1,8 +1,9 @@
 """Page d'accueil avec liste des modules."""
 import dash
 from dash import html, dcc
+from src.utils import get_page_path
 
-dash.register_page(__name__, path="/", name="Accueil")
+dash.register_page(__name__, path=get_page_path('/'), name="Accueil")
 
 layout = html.Div([
     html.Div([
@@ -13,7 +14,7 @@ layout = html.Div([
         html.Div([
             html.H3("🦅 Module Aigle"),
             html.P("Suivi géospatial et temporel des aigles"),
-            dcc.Link("Accéder au module →", href="/aigle", style={
+            dcc.Link("Accéder au module →", href=get_page_path('/aigle'), style={
                 "display": "inline-block",
                 "padding": "0.5rem 1rem",
                 "backgroundColor": "#007bff",
@@ -30,7 +31,7 @@ layout = html.Div([
         html.Div([
             html.H3("🌿 Module Flore"),
             html.P("Suivi de la flore"),
-            dcc.Link("Accéder au module →", href="/flore", style={
+            dcc.Link("Accéder au module →", href=get_page_path('/flore'), style={
                 "display": "inline-block",
                 "padding": "0.5rem 1rem",
                 "backgroundColor": "#28a745",
