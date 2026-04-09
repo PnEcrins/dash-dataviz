@@ -98,60 +98,86 @@ def create_legend() -> html.Div:
     )
 
 
-def create_map(layers=None, bounds=None, center=None, zoom=None, map_id="map"):
-    """Crée une carte avec des layers, utilise center et zoom.
-    
-    Les bounds sont ignorés - dash-leaflet préfère center+zoom.
+def create_map(layers=None, center=None, zoom=None, map_id="map", viewport_bounds=None):
+    """Crée une carte avec des layers.
     
     Args:
         layers: liste des composants leaflet à afficher
-        bounds: ignoré (pour compatibilité)
         center: centre de la carte [lat, lon]
         zoom: niveau de zoom
         map_id: ID unique pour la carte (par défaut "map")
+        viewport_bounds: bounds pour le viewport [[min_lat, min_lon], [max_lat, max_lon]]
     """
     if layers is None:
         layers = []
     tile_layers = [dl.TileLayer(url=url) for url in MAP_BASE_LAYERS]
     
-    return dl.Map(
-        id=map_id,
-        style={"width": "100%", "height": "500px"},  # Hauteur explicite
-        children=tile_layers + layers,
-        center=center if center is not None else MAP_CENTER,
-        zoom=zoom if zoom is not None else MAP_ZOOM,
-    )
+    map_props = {
+        "id": map_id,
+        "style": {"width": "100%", "height": "500px"},  # Hauteur explicite
+        "children": tile_layers + layers,
+    }
+    
+    # Utiliser viewport avec bounds si fourni (calcule automatiquement le zoom)
+    if viewport_bounds:
+        map_props["center"] = center if center is not None else MAP_CENTER
+        map_props["zoom"] = 1  # Zoom minimal pour initialiser, viewport prendra le dessus
+        map_props["viewport"] = {"bounds": viewport_bounds}
+    else:
+        # Sans bounds, utiliser center et zoom fournis
+        map_props["center"] = center if center is not None else MAP_CENTER
+        map_props["zoom"] = zoom if zoom is not None else MAP_ZOOM
+    
+    return dl.Map(**map_props)
 
 def create_obs_map(observations: List[Observation], geom_4326: str = None):
     """Affiche une carte leaflet avec la maille et les observations en points."""
     layers = []
-    geojson_data = None
+    viewport_bounds = None
     
-    # Afficher la maille si fournie
+    # Afficher la maille si fournie et calculer les bounds
     if geom_4326:
-        try:
-            # Parser geom_4326 si c'est une string JSON
-            if isinstance(geom_4326, str):
-                geojson_data = json.loads(geom_4326)
-            else:
-                geojson_data = geom_4326
-            
-            # Ajouter la géométrie comme GeoJSON seulement si valide
-            if geojson_data:
-                layers.append(
-                    dl.GeoJSON(
-                        data=geojson_data,
-                        style={
-                            "color": "black",
-                            "weight": 2,
-                            "fillColor": "transparent",
-                            "fillOpacity": 0.0,
-                        },
-                    )
+        geojson_data = geom_4326
+        # Extraire la géométrie et les coordonnées
+        geom = geojson_data.get('geometry', {})
+        coords = geom.get('coordinates', [])
+        geom_type = geom.get('type')
+        flat_coords = []
+        
+        # Extraire les coordonnées selon le type
+        if geom_type == 'Polygon':
+            for ring in coords:
+                flat_coords.extend(ring)
+        elif geom_type == 'MultiPolygon':
+            for poly in coords:
+                for ring in poly:
+                    flat_coords.extend(ring)
+        
+        # Calculer les bounds simples
+        if flat_coords:
+            try:
+                lats = [pt[1] for pt in flat_coords if len(pt) >= 2]
+                lons = [pt[0] for pt in flat_coords if len(pt) >= 2]
+                if lats and lons:
+                    # Format: [[min_lat, min_lon], [max_lat, max_lon]]
+                    viewport_bounds = [[min(lats), min(lons)], [max(lats), max(lons)]]
+            except (TypeError, IndexError):
+                pass
+        
+        # Ajouter la géométrie comme GeoJSON seulement si valide
+        if geojson_data:
+            layers.append(
+                dl.GeoJSON(
+                    data=geojson_data,
+                    style={
+                        "color": "black",
+                        "weight": 2,
+                        "fillColor": "transparent",
+                        "fillOpacity": 0.0,
+                    },
                 )
-        except (json.JSONDecodeError, AttributeError, KeyError, TypeError):
-            # En cas d'erreur de parsing, passer
-            pass
+            )
+
 
     # Ajoute les observations
     if observations:
@@ -173,11 +199,10 @@ def create_obs_map(observations: List[Observation], geom_4326: str = None):
                     )
                 )
     
-    # Utiliser la nouvelle fonction create_map
+    # Utiliser la nouvelle fonction create_map avec les bounds
     return create_map(
         layers=layers,
-        center=MAP_CENTER,
-        zoom=MAP_ZOOM,
+        viewport_bounds=viewport_bounds,
         map_id="obs-map",
     )
 
