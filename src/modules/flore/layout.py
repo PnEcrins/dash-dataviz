@@ -11,7 +11,7 @@ from src.modules.flore.api.client import (
     get_observations_by_grid,
     get_observations_of_cd_nom,
     get_all_grid_cells_with_danger,
-    get_endangered_species_in_grid,
+    get_unrecontacted_species_in_grid,
     get_grid_geometry,
 )
 from src.modules.flore.data.models import PriorityTaxon, GridCell
@@ -363,7 +363,7 @@ def flore_update_right_panel_geographic(id_area, all_grids_data, cd_nom_geo, act
                 grid_name = g.get("area_name", f"Maille {id_area}")
                 break
     # Sinon afficher la liste des Espèce(s) non recontactée(s) ces 10 dernières années
-    endangered_species = get_endangered_species_in_grid(id_area)
+    endangered_species = get_unrecontacted_species_in_grid(id_area)
     if not endangered_species:
         return create_empty_endangered_species_panel()
     panel = create_unrecontacted_species_panel(grid_name, endangered_species)

@@ -6,8 +6,10 @@ import dash_bootstrap_components as dbc
 import config
 from src.modules.aigle.api.client import fetch_all_sites, fetch_visits, fetch_all_years
 from src.modules.aigle.data.models import Site, Visit
-from src.modules.aigle.components.map import create_map_component, create_empty_map
+from src.modules.aigle.components.map import create_map_component
 from src.modules.aigle.components.list import create_sites_list, create_empty_list
+from src.components.maps import create_map
+
 from src.modules.aigle.components.visits_panel import create_visits_panel, create_empty_visits_panel
 
 logger = logging.getLogger(__name__)
@@ -81,7 +83,7 @@ def get_aigle_layout():
                     ),
                     html.Div(
                         id="aigle-map-container",
-                        children=create_empty_map(),
+                        children=create_map(),
                         style={"flex": "1", "minHeight": "0"},
                     ),
                     html.Div(
@@ -149,7 +151,7 @@ def aigle_update_year_options(years):
 def aigle_update_map_and_list(sites_data, selected_site_id):
     """Met à jour la carte et la liste des aires."""
     if not sites_data:
-        return create_empty_map(), create_empty_list()
+        return create_map(), create_empty_list()
 
     sites = [
         Site(

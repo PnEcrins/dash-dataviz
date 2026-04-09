@@ -219,7 +219,7 @@ def get_all_grid_cells_with_danger() -> List[GridCell]:
         return []
 
 
-def get_endangered_species_in_grid(id_area: int) -> List[Dict[str, Any]]:
+def get_unrecontacted_species_in_grid(id_area: int) -> List[Dict[str, Any]]:
     """Récupère les espèces PRIORITAIRES non vues depuis 10 ans dans une maille."""
     query = """
     SELECT

@@ -4,6 +4,7 @@ import json
 import dash_leaflet as dl
 from dash import html
 from src.modules.aigle.data.models import Site
+from src.components.maps import create_map
 
 
 def create_map_component(sites: List[Site], selected_site_id: Optional[int] = None) -> html.Div:
@@ -64,44 +65,11 @@ def create_map_component(sites: List[Site], selected_site_id: Optional[int] = No
         )
         markers.append(marker)
 
-    return html.Div(
-        [
-            dl.Map(
-                [
-                    dl.TileLayer(url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"),
-                    *markers,
-                ],
-                id="map",
-                style={"width": "100%", "height": "100%"},
-                center=[45.0, 6.2],
-                zoom=8,
-            ),
-        ],
-        style={
-            "width": "100%",
-            "height": "100%",
-            "position": "relative",
-        },
+    return create_map(
+        layers=markers,
+        map_id="map",
+        center=[45.0, 6.2],
+        zoom=8,
     )
 
 
-def create_empty_map() -> html.Div:
-    """Crée une carte vide (utilisée au démarrage ou en cas d'erreur)."""
-    return html.Div(
-        [
-            dl.Map(
-                [
-                    dl.TileLayer(url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"),
-                ],
-                id="map",
-                style={"width": "100%", "height": "100%"},
-                center=[45.0, 6.2],
-                zoom=8,
-            ),
-        ],
-        style={
-            "width": "100%",
-            "height": "100%",
-            "position": "relative",
-        },
-    )
