@@ -54,7 +54,7 @@ def create_endangered_species_panel(
                     ]
                 ),
             ],
-            id={"type": "endangered-species-btn", "cd_nom": sp['cd_nom']},
+            id={"type": "unrecontacted-species-btn", "cd_nom": sp['cd_nom']},
             className="mb-2 w-100",
             # n_clicks=0,
             style={

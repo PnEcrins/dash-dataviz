@@ -36,19 +36,6 @@ def create_legend() -> html.Div:
                     style={
                         "width": "20px",
                         "height": "20px",
-                        "backgroundColor": "#F0F0F0",
-                        "opacity": 0.5,
-                        "display": "inline-block",
-                        "marginRight": "8px",
-                    }
-                ),
-                html.Span("0", style={"fontSize": "12px"}),
-            ], style={"marginBottom": "5px"}),
-            html.Div([
-                html.Div(
-                    style={
-                        "width": "20px",
-                        "height": "20px",
                         "backgroundColor": "#FFFF00",
                         "opacity": 0.5,
                         "display": "inline-block",

@@ -379,7 +379,7 @@ def flore_reset_species_on_grid_change(id_area):
 @callback(
     Output("modal", "is_open"),
     Output("modal-map-container", "children"),
-    Input({"type": "endangered-species-btn", "cd_nom": ALL}, "n_clicks"),
+    Input({"type": "unrecontacted-species-btn", "cd_nom": ALL}, "n_clicks"),
     State("modal", "is_open"),
     State("current_id_area", "data"),
 )
@@ -389,7 +389,7 @@ def flore_on_species_click_geo(n_clicks, is_open, current_id_area):
         return dash.no_update, dash.no_update
 
     trigger_id = ctx.triggered_id
-    if isinstance(trigger_id, dict) and trigger_id.get("type") == "endangered-species-btn":
+    if isinstance(trigger_id, dict) and trigger_id.get("type") == "unrecontacted-species-btn":
         cd_nom = trigger_id.get("cd_nom")
         logger.info(f"🔄 Espèce cliquée: cd_nom={cd_nom}, current_id_area={current_id_area}")
         
@@ -400,8 +400,6 @@ def flore_on_species_click_geo(n_clicks, is_open, current_id_area):
         geom_4326 = None
         if current_id_area:
             geom_4326 = get_grid_geometry(current_id_area)
-        else:
-            logger.warning("❌ current_id_area est None")
         
         return not is_open, create_obs_map(observations, geom_4326=geom_4326)
 
