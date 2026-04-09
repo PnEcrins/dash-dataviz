@@ -1,10 +1,9 @@
 """Composant sélecteur taxon - Module Flore."""
-from typing import List
+from typing import List, Dict, Any
 from dash import html, dcc
-from src.modules.flore.data.models import PriorityTaxon
 
 
-def create_taxon_selector(taxa: List[PriorityTaxon]) -> html.Div:
+def create_taxon_selector(taxa: List[Dict[str, Any]]) -> html.Div:
     """Crée le sélecteur de taxon prioritaire avec barre de recherche native.
 
     Args:
@@ -14,7 +13,7 @@ def create_taxon_selector(taxa: List[PriorityTaxon]) -> html.Div:
         Composant div avec dropdown searchable
     """
     options = [
-        {"label": f"{t.nom_valide} ({t.nom_vern or t.lb_nom})", "value": t.cd_nom}
+        {"label": f"{t['nom_valide']} ({t.get('nom_vern') or t.get('lb_nom')})", "value": t['cd_nom']}
         for t in taxa
     ]
 

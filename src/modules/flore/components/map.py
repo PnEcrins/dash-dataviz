@@ -1,9 +1,8 @@
 """Composant carte mailles 1km - Module Flore."""
-from typing import List, Optional
+from typing import List, Dict, Any, Optional
 import json
 import dash_leaflet as dl
 from dash import html
-from src.modules.flore.data.models import GridCell, Observation
 from src.components.maps import create_map
 from config import MAP_CENTER, MAP_ZOOM
 
@@ -86,7 +85,7 @@ def create_legend() -> html.Div:
     )
 
 
-def create_obs_map(observations: List[Observation], geom_4326: str = None):
+def create_obs_map(observations: List[Dict[str, Any]], geom_4326: Optional[Dict] = None):
     """Affiche une carte leaflet avec la maille et les observations en points."""
     layers = []
     viewport_bounds = None
@@ -138,8 +137,7 @@ def create_obs_map(observations: List[Observation], geom_4326: str = None):
 
     # Ajoute les observations
     if observations:
-        for _obs in observations:
-            obs = _obs.to_dict()
+        for obs in observations:
             if obs.get('lon') and obs.get('lat'):
                 date_obs = obs.get('date_obs', '')
                 nom = obs.get('nom_valide', '')
@@ -176,13 +174,12 @@ def create_obs_map(observations: List[Observation], geom_4326: str = None):
         height="500px"
     )
 
-def create_grid_map(grid_cells: List[GridCell], mode: str = "tab-geographic") -> html.Div:
-    """Crée la carte des mailles 1km colorées avec observations.
+def create_grid_map(grid_cells, mode: str = "tab-geographic") -> html.Div:
+    """Crée la carte des mailles 1km Dict[str, Any]], mode: str = "tab-geographic") -> html.Div:
 
     Args:
-        grid_cells: Liste des mailles à afficher
+        grid_cells: Liste des mailles à afficher (dicts)
         mode: Mode d'affichage ("tab-species" ou "tab-geographic")
-        observations: Liste optionnelle des observations à afficher comme CircleMarkers
 
     Returns:
         Composant carte Leaflet
@@ -190,32 +187,31 @@ def create_grid_map(grid_cells: List[GridCell], mode: str = "tab-geographic") ->
     # Créer les polygones pour chaque maille EN PREMIER (elles seront en arrière)
     layers = []
     for cell in grid_cells:
-        if not cell.geom_4326:
+        if not cell.get('geom_4326'):
             continue
         try:
-            geom = json.loads(cell.geom_4326)
+            geom = json.loads(cell['geom_4326']) if isinstance(cell['geom_4326'], str) else cell['geom_4326']
         except json.JSONDecodeError:
             continue
         # Déterminer la couleur selon le mode
         if mode == "tab-species":
-            fill_color = cell.color if cell.color else "#F0F0F0"
+            fill_color = cell.get('color') if cell.get('color') else "#F0F0F0"
         else:
-            fill_color = get_grid_color(cell.nb_unrecontacted_species_species)
+            fill_color = get_grid_color(cell.get('nb_unrecontacted_species_species', 0))
         feature = {
             "type": "Feature",
             "properties": {
-                "id": cell.id_area,
-                "name": cell.area_name,
-                "nb_obs": cell.nb_observations,
-                "nb_unrecontacted_species": cell.nb_unrecontacted_species_species,
-                "last_date": cell.last_observation_date.isoformat() if cell.last_observation_date else "N/A",
+                "id": cell.get('id_area'),
+                "name": cell.get('area_name'),
+                "nb_obs": cell.get('nb_observations', 0),
+                "nb_unrecontacted_species": cell.get('nb_unrecontacted_species_species', 0),
+                "last_date": cell.get('last_observation_date') or "N/A",
             },
             "geometry": geom,
         }
         geojson_layer = dl.GeoJSON(
             data=feature,
-            id={"type": "grid-cell", "index": cell.id_area},
-            interactive=False,
+            id={"type": "grid-cell", "index": cell.get('id_area')},
             pane="overlayPane",
             style={
                 "color": "transparent",

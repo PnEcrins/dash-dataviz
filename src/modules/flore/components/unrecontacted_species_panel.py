@@ -43,7 +43,7 @@ def create_unrecontacted_species_panel(
                         ),
                         html.Br(),
                         html.Small(
-                            f"⏰ Dernière: {sp['last_observation_date'].isoformat() if sp['last_observation_date'] else 'N/A'}",
+                            f"⏰ Dernière: {sp.get('last_observation_date', 'N/A')}",
                             className="text-danger d-block",
                             style={"fontWeight": "500"},
                         ),

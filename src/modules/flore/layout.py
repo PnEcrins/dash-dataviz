@@ -1,6 +1,5 @@
 """Layout principal du module Flore."""
 import logging
-from datetime import datetime
 from dash import html, dcc, callback, Input, Output, State, ctx, ALL
 from dash.exceptions import PreventUpdate
 import dash
@@ -14,11 +13,9 @@ from src.modules.flore.api.client import (
     get_unrecontacted_species_in_grid,
     get_grid_geometry,
 )
-from src.modules.flore.data.models import PriorityTaxon, GridCell
 from src.modules.flore.components.taxon_selector import create_taxon_selector
 from src.modules.flore.components.map import create_grid_map, create_obs_map
 from src.components.maps import create_map
-from src.modules.flore.components.observations_panel import create_observations_panel
 from src.modules.flore.components.unrecontacted_species_panel import create_unrecontacted_species_panel, create_empty_endangered_species_panel
 
 
@@ -129,7 +126,6 @@ def get_flore_layout():
             ),
             dbc.Modal(
             [
-                dbc.ModalHeader(dbc.ModalTitle("Header")),
                 dbc.ModalBody(
                     html.Div(id="modal-map-container")  # Carte des observation pour un cd_nom
                 )
@@ -154,8 +150,7 @@ def get_flore_layout():
 )
 def load_taxa_on_page_mount(n_intervals):
     """Charge les taxons prioritaires au montage de la page Flore."""
-    taxa = get_priority_flora_taxa()
-    return [t.to_dict() for t in taxa]
+    return get_priority_flora_taxa()
 
 
 
@@ -170,9 +165,8 @@ def flore_update_taxon_selector(taxa_data):
     if not taxa_data:
         return create_taxon_selector([])
     
-    # Convertir les dictionnaires en objets PriorityTaxon pour créer le selector
-    taxa_objects = [PriorityTaxon(**t) for t in taxa_data]
-    return create_taxon_selector(taxa_objects)
+    # taxa_data est déjà une liste de dicts
+    return create_taxon_selector(taxa_data)
 
 
 
@@ -192,8 +186,7 @@ def flore_load_grids_species(cd_nom, active_tab):
     if not grid_cells:
         logger.warning(f"Aucune maille trouvée pour taxon {cd_nom}")
         return None
-    grids_dict = [g.to_dict() for g in grid_cells]
-    return grids_dict
+    return grid_cells
 
 # --- Mode géographique : charger toutes les grilles en danger ---
 @callback(
@@ -208,9 +201,7 @@ def flore_load_grids_geographic(active_tab):
     if not grid_cells:
         logger.warning("Aucune maille trouvée")
         return None
-    grids_dict = [g.to_dict() for g in grid_cells]
-    return grids_dict
-
+    return grid_cells
 
 
 # --- Carte : mode espèce ---
@@ -225,27 +216,7 @@ def flore_update_map_species(grids_data, active_tab):
         return dash.no_update
     if not grids_data:
         return create_map()
-    
-    grid_cells = []
-    for g in grids_data:
-        last_date = None
-        if g.get("last_observation_date"):
-            try:
-                last_date = datetime.fromisoformat(g["last_observation_date"]).date()
-            except (ValueError, TypeError):
-                last_date = None
-        grid_cells.append(GridCell(
-            id_area=g["id_area"],
-            area_name=g["area_name"],
-            geom_4326=g["geom_4326"],
-            nb_observations=g.get("nb_observations", 0),
-            last_observation_date=last_date,
-            color=g.get("color"),
-            nb_unrecontacted_species_species=0,
-        ))
-    
-    return create_grid_map(grid_cells, "tab-species")
-
+    return create_grid_map(grids_data, "tab-species")
 
 # --- Mode espèce : quand on clique sur une maille, affiche les observations dans la modale ---
 @callback(
@@ -288,24 +259,7 @@ def flore_update_map_geographic(all_grids_data, active_tab):
         return dash.no_update
     if not all_grids_data:
         return create_map()
-    grid_cells = []
-    for g in all_grids_data:
-        last_date = None
-        if g.get("last_observation_date"):
-            try:
-                last_date = datetime.fromisoformat(g["last_observation_date"]).date()
-            except (ValueError, TypeError):
-                last_date = None
-        grid_cells.append(GridCell(
-            id_area=g["id_area"],
-            area_name=g["area_name"],
-            geom_4326=g["geom_4326"],
-            nb_observations=g.get("nb_observations", 0),
-            last_observation_date=last_date,
-            color=None,
-            nb_unrecontacted_species_species=g.get("nb_unrecontacted_species_species", 0),
-        ))
-    return create_grid_map(grid_cells, "tab-geographic")
+    return create_grid_map(all_grids_data, "tab-geographic")
 
 
 @callback(
@@ -317,7 +271,6 @@ def flore_on_taxon_change(cd_nom, taxa_data):
     """Quand le taxon sélectionné change."""
     if not cd_nom or not taxa_data:
         return None
-
     return cd_nom
 
 
@@ -329,7 +282,7 @@ def flore_on_taxon_change(cd_nom, taxa_data):
 def flore_on_grid_click(n_clicks):
     """Quand on clique sur une maille."""
     if all(x is None for x in n_clicks):
-        return dash.NoUpdate
+        return dash.no_update
 
     trigger_id = ctx.triggered_id
     if isinstance(trigger_id, dict) and trigger_id.get("type") == "grid-cell":
