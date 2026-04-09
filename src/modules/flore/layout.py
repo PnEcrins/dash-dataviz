@@ -262,7 +262,7 @@ def flore_update_map_geographic(all_grids_data, active_tab):
     if active_tab != "tab-geographic":
         return dash.no_update
     if not all_grids_data:
-        return create_empty_map()
+        return create_map()
     grid_cells = []
     for g in all_grids_data:
         last_date = None

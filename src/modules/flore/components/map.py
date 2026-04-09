@@ -98,84 +98,87 @@ def create_legend() -> html.Div:
     )
 
 
-def create_map(layers=None, bounds=None, center=None, zoom=None) -> html.Div:
-    """Crée une carte vide ou avec des layers, supporte bounds, center, zoom, et plusieurs TileLayers."""
+def create_map(layers=None, bounds=None, center=None, zoom=None, map_id="map"):
+    """Crée une carte avec des layers, utilise center et zoom.
+    
+    Les bounds sont ignorés - dash-leaflet préfère center+zoom.
+    
+    Args:
+        layers: liste des composants leaflet à afficher
+        bounds: ignoré (pour compatibilité)
+        center: centre de la carte [lat, lon]
+        zoom: niveau de zoom
+        map_id: ID unique pour la carte (par défaut "map")
+    """
     if layers is None:
         layers = []
     tile_layers = [dl.TileLayer(url=url) for url in MAP_BASE_LAYERS]
-    map_kwargs = {
-        "id": "map",
-        "style": {"width": "100%", "height": "100%"},
-        "children": tile_layers + layers,
-    }
-    # Correction : toujours fournir center/zoom si bounds est None ou vide
-    if bounds is not None and bounds != []:
-        map_kwargs["bounds"] = bounds
-    else:
-        map_kwargs["center"] = center if center is not None else MAP_CENTER
-        map_kwargs["zoom"] = zoom if zoom is not None else MAP_ZOOM
-    return html.Div([
-        dl.Map(**map_kwargs)
-    ], style={"width": "100%", "height": "100%", "position": "relative"})
+    
+    return dl.Map(
+        id=map_id,
+        style={"width": "100%", "height": "500px"},  # Hauteur explicite
+        children=tile_layers + layers,
+        center=center if center is not None else MAP_CENTER,
+        zoom=zoom if zoom is not None else MAP_ZOOM,
+    )
 
 def create_obs_map(observations: List[Observation], geom_4326: str = None):
     """Affiche une carte leaflet avec la maille et les observations en points."""
     layers = []
-    bounds = None
-    # Afficher la maille si fournie et calculer les bounds
+    geojson_data = None
+    
+    # Afficher la maille si fournie
     if geom_4326:
         try:
-            geom = geom_4326.get('geometry', {})
-            coords = geom.get('coordinates', [])
-            flat_coords = []
-            if geom['type'] == 'Polygon':
-                for ring in coords:
-                    flat_coords.extend(ring)
-            elif geom['type'] == 'MultiPolygon':
-                for poly in coords:
-                    for ring in poly:
-                        flat_coords.extend(ring)
-            if flat_coords:
-                lats = [pt[1] for pt in flat_coords]
-                lons = [pt[0] for pt in flat_coords]
-                bounds = [[min(lats), min(lons)], [max(lats), max(lons)]]
-            layers.append(
-                dl.GeoJSON(
-                    data=geom_4326,
-                    style={
-                        "color": "black",
-                        "weight": 2,
-                        "fillColor": "transparent",
-                        "fillOpacity": 0.0,
-                    },
+            # Parser geom_4326 si c'est une string JSON
+            if isinstance(geom_4326, str):
+                geojson_data = json.loads(geom_4326)
+            else:
+                geojson_data = geom_4326
+            
+            # Ajouter la géométrie comme GeoJSON seulement si valide
+            if geojson_data:
+                layers.append(
+                    dl.GeoJSON(
+                        data=geojson_data,
+                        style={
+                            "color": "black",
+                            "weight": 2,
+                            "fillColor": "transparent",
+                            "fillOpacity": 0.0,
+                        },
+                    )
                 )
-            )
-        except Exception as e:
+        except (json.JSONDecodeError, AttributeError, KeyError, TypeError):
+            # En cas d'erreur de parsing, passer
             pass
+
     # Ajoute les observations
-    for _obs in observations:
-        obs = _obs.to_dict()
-        if obs.get('lon') and obs.get('lat'):
-            layers.append(
-                dl.CircleMarker(
-                    center=[obs['lat'], obs['lon']],
-                    radius=5,
-                    color="blue",
-                    fill=True,
-                    fillOpacity=0.7,
-                    children=dl.Popup(html.Div([
-                        html.Small(f"📅 {obs.get('date_obs', '')}"),
-                        html.Br(),
-                        html.Small(f"🔍 {obs.get('nom_valide', '')}"),
-                    ]))
+    if observations:
+        for _obs in observations:
+            obs = _obs.to_dict()
+            if obs.get('lon') and obs.get('lat'):
+                layers.append(
+                    dl.CircleMarker(
+                        center=[obs['lat'], obs['lon']],
+                        radius=5,
+                        color="blue",
+                        fill=True,
+                        fillOpacity=0.7,
+                        children=dl.Popup(html.Div([
+                            html.Small(f"📅 {obs.get('date_obs', '')}"),
+                            html.Br(),
+                            html.Small(f"🔍 {obs.get('nom_valide', '')}"),
+                        ]))
+                    )
                 )
-            )
+    
     # Utiliser la nouvelle fonction create_map
     return create_map(
         layers=layers,
-        bounds=bounds,
         center=MAP_CENTER,
         zoom=MAP_ZOOM,
+        map_id="obs-map",
     )
 
 def create_grid_map(grid_cells: List[GridCell], mode: str = "tab-geographic") -> html.Div:
@@ -244,17 +247,18 @@ def create_grid_map(grid_cells: List[GridCell], mode: str = "tab-geographic") ->
         layers.append(geojson_layer)
 
     # Utiliser la nouvelle fonction create_map
-    map_div = create_map(
+    map_component = create_map(
         layers=layers,
-        bounds=None,
         center=MAP_CENTER,
         zoom=MAP_ZOOM,
     )
     # Ajouter la légende si nécessaire
     if mode == "tab-geographic":
         return html.Div([
-            map_div,
+            map_component,
             create_legend(),
         ], style={"width": "100%", "height": "100%", "position": "relative"})
     else:
-        return map_div
+        return html.Div([
+            map_component,
+        ], style={"width": "100%", "height": "100%", "position": "relative"})
