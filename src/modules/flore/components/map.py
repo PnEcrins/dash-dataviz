@@ -246,17 +246,6 @@ def create_grid_map(grid_cells: List[GridCell], mode: str = "tab-geographic") ->
                 "opacity": 0,
                 "fillOpacity": 0.7,
             },
-            children=dl.Popup(
-                html.Div([
-                    html.Strong(cell.area_name),
-                    html.Br(),
-                    html.Small(f"Observations: {cell.nb_observations}"),
-                    html.Br(),
-                    html.Small(f"Espèce(s) non recontactée(s) ces 10 dernières années: {cell.nb_unrecontacted_species_species}"),
-                    html.Br(),
-                    html.Small(f"Dernière: {cell.last_observation_date.isoformat() if cell.last_observation_date else 'N/A'}"),
-                ])
-            ),
         )
         layers.append(geojson_layer)
 
