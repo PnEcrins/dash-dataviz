@@ -265,7 +265,6 @@ def create_grid_map(grid_cells: List[GridCell], mode: str = "tab-geographic") ->
         layers=layers,
         center=MAP_CENTER,
         zoom=MAP_ZOOM,
-        height="100%",  # La carte doit remplir le conteneur
     )
     # Ajouter la légende si nécessaire
     if mode == "tab-geographic":

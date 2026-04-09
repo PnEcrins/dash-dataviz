@@ -1,0 +1,49 @@
+"""Configuration centralisée pour l'application Dash."""
+from datetime import datetime
+import os
+
+# ============================================================================
+# APPLICATION
+# ============================================================================
+DEBUG = True
+PORT = 8050
+HOST = "127.0.0.1"
+
+# ============================================================================
+# GEONATURE AIGLE APIS
+# ============================================================================
+API_BASE_URL = "https://geonature.ecrins-parcnational.fr/api/exports/api"
+API_SITES = f"{API_BASE_URL}/31"
+API_VISITS = f"{API_BASE_URL}/32"
+API_TIMEOUT = 30
+
+
+# ============================================================================
+# POSTGRESQL FLORE
+# ============================================================================
+DB_CONFIG = {
+    'host': os.getenv('GEONATURE_DB_HOST', 'localhost'),
+    'port': int(os.getenv('GEONATURE_DB_PORT', '5432')),
+    'database': os.getenv('GEONATURE_DB_NAME', 'geonature2db_data'),
+    'user': os.getenv('GEONATURE_DB_USER', 'geonatadmin'),
+    'password': os.getenv('GEONATURE_DB_PASSWORD', 'monpassachanger'),
+}
+
+# Psycopg2 connection string
+if DB_CONFIG['password']:
+    DATABASE_URL = f"postgresql://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}"
+else:
+    DATABASE_URL = f"postgresql://{DB_CONFIG['user']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}"
+
+# ============================================================================
+# DATA & MAP
+# ============================================================================
+CURRENT_YEAR = datetime.now().year
+
+# Leaflet
+MAP_CENTER = [44.8, 6.2]  # Centre Ecrins
+MAP_ZOOM = 10
+MAP_BASE_LAYERS = [
+        "https://data.geopf.fr/private/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&apikey=ign_scan_ws&LAYER=GEOGRAPHICALGRIDSYSTEMS.MAPS&EXCEPTIONS=text/xml&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/jpeg&STYLE=normal",
+]
+        # "https://data.geopf.fr/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/jpeg&STYLE=normal",

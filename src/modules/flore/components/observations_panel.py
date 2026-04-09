@@ -20,15 +20,7 @@ def create_observations_panel(
     """
 
     if not grid_name or not observations:
-        return html.Div(
-            [
-                html.H5("Observations", className="mb-3"),
-                html.P(
-                    "Cliquez sur une maille pour voir les observations",
-                    className="text-muted",
-                ),
-            ],
-        )
+        return html.Div([])
 
     obs_cards = []
     for obs in observations:
@@ -77,19 +69,6 @@ def create_observations_panel(
                     "overflowY": "auto",
                     "paddingRight": "5px",
                 },
-            ),
-        ],
-    )
-
-
-def create_empty_observations_panel() -> html.Div:
-    """Crée un panneau vide."""
-    return html.Div(
-        [
-            html.H5("Observations", className="mb-3"),
-            html.P(
-                "Cliquez sur une maille pour voir les observations",
-                className="text-muted",
             ),
         ],
     )

@@ -1,18 +1,17 @@
 """Composant sélecteur taxon - Module Flore."""
 from typing import List
-from dash import html
-import dash_bootstrap_components as dbc
+from dash import html, dcc
 from src.modules.flore.data.models import PriorityTaxon
 
 
 def create_taxon_selector(taxa: List[PriorityTaxon]) -> html.Div:
-    """Crée le sélecteur de taxon prioritaire.
+    """Crée le sélecteur de taxon prioritaire avec barre de recherche native.
 
     Args:
         taxa: Liste des taxons prioritaires
 
     Returns:
-        Composant div avec dropdown
+        Composant div avec dropdown searchable
     """
     options = [
         {"label": f"{t.nom_valide} ({t.nom_vern or t.lb_nom})", "value": t.cd_nom}
@@ -23,10 +22,15 @@ def create_taxon_selector(taxa: List[PriorityTaxon]) -> html.Div:
         [
             html.H5("🌿 Flore Prioritaire", className="mb-3"),
             html.Label("Sélectionnez un taxon:", className="mb-2"),
-            dbc.Select(
+            dcc.Dropdown(
                 id="flore-taxon-selector",
                 options=options,
                 value=None,
+                searchable=True,
+                clearable=True,
+                placeholder="Rechercher un taxon...",
+                maxHeight=400,
+                style={"width": "100%"},
             ),
             html.Hr(),
 

@@ -17,8 +17,8 @@ from src.modules.flore.api.client import (
 from src.modules.flore.data.models import PriorityTaxon, GridCell
 from src.modules.flore.components.taxon_selector import create_taxon_selector
 from src.modules.flore.components.map import create_grid_map, create_map, create_obs_map
-from src.modules.flore.components.observations_panel import create_observations_panel, create_empty_observations_panel
-from src.modules.flore.components.endangered_species_panel import create_unrecontacted_species_panel, create_empty_endangered_species_panel
+from src.modules.flore.components.observations_panel import create_observations_panel
+from src.modules.flore.components.unrecontacted_species_panel import create_unrecontacted_species_panel, create_empty_endangered_species_panel
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ def get_flore_layout():
                     # Droite: Observations ou Espèce(s) non recontactée(s) ces 10 dernières années
                     html.Div(
                         id="flore-right-panel",
-                        children=create_empty_observations_panel(),
+                        children=None,
                         style={
                             "flex": "0 0 25%",
                             "minHeight": "0",
@@ -145,22 +145,11 @@ def get_flore_layout():
             is_open=False,
         ),
         ],
-        style={"height": "100%", "display": "flex", "flexDirection": "column", "margin": "0", "padding": "0"},
+        style={"height": "100vh", "display": "flex", "flexDirection": "column", "margin": "0", "padding": "0"},
     )
 
 
-# Callbacks Flore
 
-# @callback(
-#     Output("modal", "is_open"),
-#     Input("open", "n_clicks"),
-#     [State("modal", "is_open")],
-# )
-# def toggle_modal(n1, is_open):
-#     """Open the modal"""
-#     if n1:
-#         return not is_open
-#     return is_open
 
 # --- Mettre à jour le sélecteur de taxons quand les taxons sont chargés ---
 @callback(
@@ -177,7 +166,6 @@ def flore_update_taxon_selector(taxa_data):
     return create_taxon_selector(taxa_objects)
 
 
-# === Callbacks séparés pour chaque mode ===
 
 # --- Mode espèce : charger les grilles pour le taxon sélectionné ---
 @callback(
@@ -356,12 +344,13 @@ def flore_update_right_panel_geographic(id_area, all_grids_data, cd_nom_geo, act
 @callback(
     Output("current_id_area", "data", allow_duplicate=True),
     Output("flore-selected-species-geo-store", "data", allow_duplicate=True),
+    Output("flore-right-panel", "children", allow_duplicate=True),
     Input("flore-left-tabs", "active_tab"),
     prevent_initial_call=True,
 )
 def flore_reset_on_tab_change(active_tab):
     """Réinitialise les sélections quand on change de tab."""
-    return None, None
+    return None, None, None
 
 
 @callback(

@@ -99,7 +99,7 @@ def get_aigle_layout():
                 style={"display": "flex", "gap": "0", "flex": "1", "minHeight": "0"},
             ),
         ],
-        style={"height": "100%", "display": "flex", "flexDirection": "column", "margin": "0", "padding": "0"},
+        style={"height": "100vh", "display": "flex", "flexDirection": "column", "margin": "0", "padding": "0"},
     )
 
 
