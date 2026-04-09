@@ -4,7 +4,7 @@ from dash import html
 import dash_bootstrap_components as dbc
 
 
-def create_endangered_species_panel(
+def create_unrecontacted_species_panel(
     grid_name: Optional[str] = None,
     species: Optional[List[Dict[str, Any]]] = None,
 ) -> html.Div:
@@ -23,7 +23,7 @@ def create_endangered_species_panel(
             [
                 html.H5("Espèce(s) non recontactée(s) ces 10 dernières années", className="mb-3"),
                 html.P(
-                    "Cliquez sur une maille rouge pour voir les espèces non observées depuis 10 ans",
+                    "Cliquez sur une maille pour voir les espèces non observées depuis 10 ans",
                     className="text-muted",
                 ),
             ],
@@ -56,7 +56,6 @@ def create_endangered_species_panel(
             ],
             id={"type": "unrecontacted-species-btn", "cd_nom": sp['cd_nom']},
             className="mb-2 w-100",
-            # n_clicks=0,
             style={
                 "borderLeft": "4px solid #dc3545",
                 "textAlign": "left",
@@ -96,7 +95,7 @@ def create_empty_endangered_species_panel() -> html.Div:
         [
             html.H5("Espèce(s) non recontactée(s) ces 10 dernières années", className="mb-3"),
             html.P(
-                "Cliquez sur une maille rouge pour voir les espèces non observées depuis 10 ans",
+                "Cliquez sur une maille pour voir les espèces non observées depuis 10 ans",
                 className="text-muted",
             ),
         ],

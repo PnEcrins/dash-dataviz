@@ -18,7 +18,7 @@ from src.modules.flore.data.models import PriorityTaxon, GridCell
 from src.modules.flore.components.taxon_selector import create_taxon_selector
 from src.modules.flore.components.map import create_grid_map, create_map, create_obs_map
 from src.modules.flore.components.observations_panel import create_observations_panel, create_empty_observations_panel
-from src.modules.flore.components.endangered_species_panel import create_endangered_species_panel, create_empty_endangered_species_panel
+from src.modules.flore.components.endangered_species_panel import create_unrecontacted_species_panel, create_empty_endangered_species_panel
 
 logger = logging.getLogger(__name__)
 
@@ -310,8 +310,8 @@ def flore_on_taxon_change(cd_nom, taxa_data):
 )
 def flore_on_grid_click(n_clicks):
     """Quand on clique sur une maille."""
-    if not ctx.triggered:
-        return None
+    if all(x is None for x in n_clicks):
+        return dash.NoUpdate
 
     trigger_id = ctx.triggered_id
     if isinstance(trigger_id, dict) and trigger_id.get("type") == "grid-cell":
@@ -349,7 +349,7 @@ def flore_update_right_panel_geographic(id_area, all_grids_data, cd_nom_geo, act
     endangered_species = get_endangered_species_in_grid(id_area)
     if not endangered_species:
         return create_empty_endangered_species_panel()
-    panel = create_endangered_species_panel(grid_name, endangered_species)
+    panel = create_unrecontacted_species_panel(grid_name, endangered_species)
     return panel
 
 
@@ -385,8 +385,11 @@ def flore_reset_species_on_grid_change(id_area):
 )
 def flore_on_species_click_geo(n_clicks, is_open, current_id_area):
     """Quand on clique sur une espèce en mode géographique."""
-    if not ctx.triggered:
+    # n_clicks est un tableau d'event déclenché par le click utiliasteur
+    # si tous les valeur de ce tableau valent None, alors il n'y a pas eu de click utilisateur, mais un evenement déclenché par la création du composant
+    if all(x is None for x in n_clicks):
         return dash.no_update, dash.no_update
+    
 
     trigger_id = ctx.triggered_id
     if isinstance(trigger_id, dict) and trigger_id.get("type") == "unrecontacted-species-btn":
@@ -403,7 +406,7 @@ def flore_on_species_click_geo(n_clicks, is_open, current_id_area):
         
         return not is_open, create_obs_map(observations, geom_4326=geom_4326)
 
-    return dash.no_update, dash.no_update
+    return dash.no_update, dash.no_updateS
 
 
 
