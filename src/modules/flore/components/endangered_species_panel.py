@@ -1,4 +1,4 @@
-"""Composant liste espèces en danger - Module Flore."""
+"""Composant liste Espèce(s) non recontactée(s) ces 10 dernières années - Module Flore."""
 from typing import List, Dict, Any, Optional
 from dash import html
 import dash_bootstrap_components as dbc
@@ -8,20 +8,20 @@ def create_endangered_species_panel(
     grid_name: Optional[str] = None,
     species: Optional[List[Dict[str, Any]]] = None,
 ) -> html.Div:
-    """Crée le panneau espèces en danger d'une maille.
+    """Crée le panneau Espèce(s) non recontactée(s) ces 10 dernières années d'une maille.
 
     Args:
         grid_name: Nom de la maille sélectionnée
-        species: Liste des espèces en danger
+        species: Liste des Espèce(s) non recontactée(s) ces 10 dernières années
 
     Returns:
-        Composant panneau espèces en danger
+        Composant panneau Espèce(s) non recontactée(s) ces 10 dernières années
     """
 
     if not grid_name or not species:
         return html.Div(
             [
-                html.H5("Espèces en Danger", className="mb-3"),
+                html.H5("Espèce(s) non recontactée(s) ces 10 dernières années", className="mb-3"),
                 html.P(
                     "Cliquez sur une maille rouge pour voir les espèces non observées depuis 10 ans",
                     className="text-muted",
@@ -70,16 +70,16 @@ def create_endangered_species_panel(
 
     return html.Div(
         [
-            html.H5("Espèces en Danger", className="mb-2"),
-            html.P(f"{grid_name} - {len(species)} espèces manquantes",
+            html.H5("Espèce(s) non recontactée(s) ces 10 dernières années", className="mb-2"),
+            html.P(f"{grid_name} - {len(species)} espèce(s)",
                    className="small text-danger mb-3",
                    style={"fontWeight": "500"}),
             html.Div(
                 species_buttons if species_buttons else html.P(
-                    "Aucune espèce en danger",
+                    "Aucune espèce non recontactées",
                     className="text-muted",
                 ),
-                id="flore-endangered-list",
+                id="flore-unrecontacted-species-list",
                 style={
                     "maxHeight": "100%",
                     "overflowY": "auto",
@@ -91,10 +91,10 @@ def create_endangered_species_panel(
 
 
 def create_empty_endangered_species_panel() -> html.Div:
-    """Crée un panneau vide espèces en danger."""
+    """Crée un panneau vide Espèce(s) non recontactée(s) ces 10 dernières années."""
     return html.Div(
         [
-            html.H5("Espèces en Danger", className="mb-3"),
+            html.H5("Espèce(s) non recontactée(s) ces 10 dernières années", className="mb-3"),
             html.P(
                 "Cliquez sur une maille rouge pour voir les espèces non observées depuis 10 ans",
                 className="text-muted",

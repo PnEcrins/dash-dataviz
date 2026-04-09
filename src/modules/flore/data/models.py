@@ -36,7 +36,7 @@ class GridCell:
     nb_observations: int
     last_observation_date: Optional[date]
     color: str  # 'green' ou 'red'
-    nb_endangered_species: int = 0  # Nombre d'espèces en danger
+    nb_unrecontacted_species_species: int = 0  # Nombre d'Espèce(s) non recontactée(s) ces 10 dernières années
 
     def to_dict(self) -> dict:
         """Convertit en dictionnaire."""
@@ -47,7 +47,7 @@ class GridCell:
             "nb_observations": self.nb_observations,
             "last_observation_date": self.last_observation_date.isoformat() if self.last_observation_date else None,
             "color": self.color,
-            "nb_endangered_species": self.nb_endangered_species,
+            "nb_unrecontacted_species_species": self.nb_unrecontacted_species_species,
         }
 
 

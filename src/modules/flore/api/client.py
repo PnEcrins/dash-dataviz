@@ -172,7 +172,7 @@ def get_all_grid_cells_with_danger() -> List[GridCell]:
         ST_AsGeoJSON(la.geom_4326) as geom_4326,
         COUNT(DISTINCT s.id_synthese) as nb_obs,
         MAX(s.date_min::DATE) as last_observation_date,
-        COUNT(DISTINCT t.cd_nom) as nb_endangered_species,
+        COUNT(DISTINCT t.cd_nom) as nb_unrecontacted_species_species,
         'red' as color
     FROM ref_geo.l_areas la
     JOIN gn_synthese.cor_area_synthese cas ON la.id_area = cas.id_area
@@ -209,7 +209,7 @@ def get_all_grid_cells_with_danger() -> List[GridCell]:
                 nb_observations=row['nb_obs'] or 0,
                 last_observation_date=last_date,
                 color=row['color'],
-                nb_endangered_species=row['nb_endangered_species'] or 0,
+                nb_unrecontacted_species_species=row['nb_unrecontacted_species_species'] or 0,
             ))
 
         cur.close()

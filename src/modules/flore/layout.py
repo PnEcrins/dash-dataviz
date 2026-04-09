@@ -16,7 +16,7 @@ from src.modules.flore.api.client import (
 )
 from src.modules.flore.data.models import PriorityTaxon, GridCell
 from src.modules.flore.components.taxon_selector import create_taxon_selector
-from src.modules.flore.components.map import create_grid_map, create_empty_map, create_obs_map
+from src.modules.flore.components.map import create_grid_map, create_map, create_obs_map
 from src.modules.flore.components.observations_panel import create_observations_panel, create_empty_observations_panel
 from src.modules.flore.components.endangered_species_panel import create_endangered_species_panel, create_empty_endangered_species_panel
 
@@ -116,10 +116,10 @@ def get_flore_layout():
                     # Milieu: Carte
                     html.Div(
                         id="flore-map-container",
-                        children=create_empty_map(),
+                        children=create_map(),
                         style={"flex": "1", "minHeight": "0"},
                     ),
-                    # Droite: Observations ou Espèces en danger
+                    # Droite: Observations ou Espèce(s) non recontactée(s) ces 10 dernières années
                     html.Div(
                         id="flore-right-panel",
                         children=create_empty_observations_panel(),
@@ -230,7 +230,7 @@ def flore_update_map_species(grids_data, active_tab):
     if active_tab != "tab-species":
         return dash.no_update
     if not grids_data:
-        return create_empty_map()
+        return create_map()
     grid_cells = []
     for g in grids_data:
         last_date = None
@@ -246,9 +246,9 @@ def flore_update_map_species(grids_data, active_tab):
             nb_observations=g.get("nb_observations", 0),
             last_observation_date=last_date,
             color=g.get("color"),
-            nb_endangered_species=0,
+            nb_unrecontacted_species_species=0,
         ))
-    return create_grid_map(grid_cells, None, "tab-species")
+    return create_grid_map(grid_cells, "tab-species")
 
 # --- Carte : mode géographique ---
 @callback(
@@ -278,9 +278,9 @@ def flore_update_map_geographic(all_grids_data, active_tab):
             nb_observations=g.get("nb_observations", 0),
             last_observation_date=last_date,
             color=None,
-            nb_endangered_species=g.get("nb_endangered_species", 0),
+            nb_unrecontacted_species_species=g.get("nb_unrecontacted_species_species", 0),
         ))
-    return create_grid_map(grid_cells, None, "tab-geographic")
+    return create_grid_map(grid_cells, "tab-geographic")
 
 
 @callback(
@@ -320,7 +320,7 @@ def flore_on_grid_click(n_clicks):
     return None
 
 
-# Panneau droit: affiche observations ou espèces en danger (quand on clique)
+# Panneau droit: affiche observations ou Espèce(s) non recontactée(s) ces 10 dernières années (quand on clique)
 
 # --- Panneau droit : mode géographique ---
 @callback(
@@ -344,8 +344,8 @@ def flore_update_right_panel_geographic(id_area, all_grids_data, cd_nom_geo, act
             if g.get("id_area") == id_area:
                 grid_name = g.get("area_name", f"Maille {id_area}")
                 break
-    # Sinon afficher la liste des espèces en danger
-    logger.info(f"🔄 [Géo] Chargement espèces en danger pour maille {id_area}")
+    # Sinon afficher la liste des Espèce(s) non recontactée(s) ces 10 dernières années
+    logger.info(f"🔄 [Géo] Chargement Espèce(s) non recontactée(s) ces 10 dernières années pour maille {id_area}")
     endangered_species = get_endangered_species_in_grid(id_area)
     if not endangered_species:
         return create_empty_endangered_species_panel()

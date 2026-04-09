@@ -4,23 +4,23 @@ import json
 import dash_leaflet as dl
 from dash import html
 from src.modules.flore.data.models import GridCell, Observation
-from config import MAP_CENTER, MAP_ZOOM
+from config import MAP_CENTER, MAP_ZOOM, MAP_BASE_LAYERS
 
 
-def get_danger_color(nb_observations: int) -> str:
-    """Génère une couleur selon le nombre d'observations.
+def get_grid_color(nb_species: int) -> str:
+    """Génère une couleur selon le nombre d'espèce.
 
     Args:
-        nb_observations: Nombre d'observations
+        nb_species: Nombre d'espèce dans la maille
 
     Returns:
         Code couleur hex
     """
-    if nb_observations == 0:
+    if nb_species == 0:
         return "#F0F0F0"  # Gris très clair
-    elif nb_observations == 1:
+    elif nb_species == 1:
         return "#FFFF00"  # Jaune
-    elif nb_observations == 2:
+    elif nb_species == 2:
         return "#FFA500"  # Orange
     else:  # 3+
         return "#FF0000"  # Rouge
@@ -30,7 +30,7 @@ def create_legend() -> html.Div:
     """Crée une légende pour la carte."""
     return html.Div(
         [
-            html.H6("Espèces en danger", style={"marginBottom": "10px", "fontWeight": "bold"}),
+            html.P("Nombre d'espèce(s) non recontactée(s) ces 10 dernières années", style={"marginBottom": "10px", "fontWeight": "bold", "width": "70px"}),
             html.Div([
                 html.Div(
                     style={
@@ -98,12 +98,91 @@ def create_legend() -> html.Div:
     )
 
 
-def create_grid_map(grid_cells: List[GridCell], observations: Optional[List[dict]] = None, mode: str = "tab-geographic") -> html.Div:
+def create_map(layers=None, bounds=None, center=None, zoom=None) -> html.Div:
+    """Crée une carte vide ou avec des layers, supporte bounds, center, zoom, et plusieurs TileLayers."""
+    if layers is None:
+        layers = []
+    tile_layers = [dl.TileLayer(url=url) for url in MAP_BASE_LAYERS]
+    map_kwargs = {
+        "id": "map",
+        "style": {"width": "100%", "height": "100%"},
+        "children": tile_layers + layers,
+    }
+    # Correction : toujours fournir center/zoom si bounds est None ou vide
+    if bounds is not None and bounds != []:
+        map_kwargs["bounds"] = bounds
+    else:
+        map_kwargs["center"] = center if center is not None else MAP_CENTER
+        map_kwargs["zoom"] = zoom if zoom is not None else MAP_ZOOM
+    return html.Div([
+        dl.Map(**map_kwargs)
+    ], style={"width": "100%", "height": "100%", "position": "relative"})
+
+def create_obs_map(observations: List[Observation], geom_4326: str = None):
+    """Affiche une carte leaflet avec la maille et les observations en points."""
+    layers = []
+    bounds = None
+    # Afficher la maille si fournie et calculer les bounds
+    if geom_4326:
+        try:
+            geom = geom_4326.get('geometry', {})
+            coords = geom.get('coordinates', [])
+            flat_coords = []
+            if geom['type'] == 'Polygon':
+                for ring in coords:
+                    flat_coords.extend(ring)
+            elif geom['type'] == 'MultiPolygon':
+                for poly in coords:
+                    for ring in poly:
+                        flat_coords.extend(ring)
+            if flat_coords:
+                lats = [pt[1] for pt in flat_coords]
+                lons = [pt[0] for pt in flat_coords]
+                bounds = [[min(lats), min(lons)], [max(lats), max(lons)]]
+            layers.append(
+                dl.GeoJSON(
+                    data=geom_4326,
+                    style={
+                        "color": "black",
+                        "weight": 2,
+                        "fillColor": "transparent",
+                        "fillOpacity": 0.0,
+                    },
+                )
+            )
+        except Exception as e:
+            pass
+    # Ajoute les observations
+    for _obs in observations:
+        obs = _obs.to_dict()
+        if obs.get('lon') and obs.get('lat'):
+            layers.append(
+                dl.CircleMarker(
+                    center=[obs['lat'], obs['lon']],
+                    radius=5,
+                    color="blue",
+                    fill=True,
+                    fillOpacity=0.7,
+                    children=dl.Popup(html.Div([
+                        html.Small(f"📅 {obs.get('date_obs', '')}"),
+                        html.Br(),
+                        html.Small(f"🔍 {obs.get('nom_valide', '')}"),
+                    ]))
+                )
+            )
+    # Utiliser la nouvelle fonction create_map
+    return create_map(
+        layers=layers,
+        bounds=bounds,
+        center=MAP_CENTER,
+        zoom=MAP_ZOOM,
+    )
+
+def create_grid_map(grid_cells: List[GridCell], mode: str = "tab-geographic") -> html.Div:
     """Crée la carte des mailles 1km colorées avec observations.
 
     Args:
         grid_cells: Liste des mailles à afficher
-        observations: Liste des observations avec lon/lat (optionnel)
         mode: Mode d'affichage ("tab-species" ou "tab-geographic")
 
     Returns:
@@ -114,33 +193,26 @@ def create_grid_map(grid_cells: List[GridCell], observations: Optional[List[dict
     for cell in grid_cells:
         if not cell.geom_4326:
             continue
-
         try:
             geom = json.loads(cell.geom_4326)
         except json.JSONDecodeError:
             continue
-
         # Déterminer la couleur selon le mode
         if mode == "tab-species":
-            # Mode espèce: utiliser la couleur du cell (vert ou rouge)
             fill_color = cell.color if cell.color else "#F0F0F0"
         else:
-            # Mode géographique: calculer basée sur nb_endangered_species
-            fill_color = get_danger_color(cell.nb_endangered_species)
-
-        # Créer le GeoJSON
+            fill_color = get_grid_color(cell.nb_unrecontacted_species_species)
         feature = {
             "type": "Feature",
             "properties": {
                 "id": cell.id_area,
                 "name": cell.area_name,
                 "nb_obs": cell.nb_observations,
-                "nb_endangered": cell.nb_endangered_species,
+                "nb_unrecontacted_species": cell.nb_unrecontacted_species_species,
                 "last_date": cell.last_observation_date.isoformat() if cell.last_observation_date else "N/A",
             },
             "geometry": geom,
         }
-
         geojson_layer = dl.GeoJSON(
             data=feature,
             id={"type": "grid-cell", "index": cell.id_area},
@@ -163,7 +235,7 @@ def create_grid_map(grid_cells: List[GridCell], observations: Optional[List[dict
                     html.Br(),
                     html.Small(f"Observations: {cell.nb_observations}"),
                     html.Br(),
-                    html.Small(f"Espèces en danger: {cell.nb_endangered_species}"),
+                    html.Small(f"Espèce(s) non recontactée(s) ces 10 dernières années: {cell.nb_unrecontacted_species_species}"),
                     html.Br(),
                     html.Small(f"Dernière: {cell.last_observation_date.isoformat() if cell.last_observation_date else 'N/A'}"),
                 ])
@@ -171,147 +243,18 @@ def create_grid_map(grid_cells: List[GridCell], observations: Optional[List[dict
         )
         layers.append(geojson_layer)
 
-    # Ajouter les observations comme CircleMarkers
-    if observations:
-        for obs in observations:
-            if obs.get('lon') and obs.get('lat'):
-                circle = dl.CircleMarker(
-                    center=[obs['lat'], obs['lon']],
-                    id={"type": "observation-marker", "index": obs['id_synthese']},
-                    radius=4,
-                    color="blue",
-                    weight=1,
-                    opacity=0.7,
-                    fillColor="blue",
-                    fillOpacity=0.5,
-                    children=dl.Popup(
-                        html.Div([
-                            html.Small(f"📅 {obs['date_obs']}"),
-                            html.Br(),
-                            html.Small(f"🔍 {obs['nom_valide']}"),
-                        ])
-                    ),
-                )
-                layers.append(circle)
-
-    return html.Div(
-        [
-            dl.Map(
-                [
-                    dl.TileLayer(url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"),
-                    *layers,
-                ],
-                id="flore-map",
-                style={"width": "100%", "height": "100%"},
-                center=MAP_CENTER,
-                zoom=MAP_ZOOM,
-            ),
-            create_legend() if mode == "tab-geographic" else None,
-        ],
-        style={
-            "width": "100%",
-            "height": "100%",
-            "position": "relative",
-        },
+    # Utiliser la nouvelle fonction create_map
+    map_div = create_map(
+        layers=layers,
+        bounds=None,
+        center=MAP_CENTER,
+        zoom=MAP_ZOOM,
     )
-
-
-def create_empty_map() -> html.Div:
-    """Crée une carte vide."""
-    return html.Div(
-        [
-            dl.Map(
-                [
-                    dl.TileLayer(url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"),
-                ],
-                id="flore-map",
-                style={"width": "100%", "height": "100%"},
-                center=MAP_CENTER,
-                zoom=MAP_ZOOM,
-            ),
-        ],
-        style={
-            "width": "100%",
-            "height": "100%",
-            "position": "relative",
-        },
-    )
-
-def create_obs_map(observations: List[Observation], geom_4326: str = None):
-    """Affiche une carte leaflet avec la maille et les observations en points."""
-    layers = []
-    bounds = None
-    
-    # Afficher la maille si fournie et calculer les bounds
-    if geom_4326:
-        try:
-            geom = geom_4326.get('geometry', {})
-            
-            # Extraire les coordonnées et calculer les bounds
-            coords = geom.get('coordinates', [])
-            flat_coords = []
-            
-            if geom['type'] == 'Polygon':
-                for ring in coords:
-                    flat_coords.extend(ring)
-            elif geom['type'] == 'MultiPolygon':
-                for poly in coords:
-                    for ring in poly:
-                        flat_coords.extend(ring)
-            
-            if flat_coords:
-                lats = [pt[1] for pt in flat_coords]
-                lons = [pt[0] for pt in flat_coords]
-                bounds = [[min(lats), min(lons)], [max(lats), max(lons)]]
-            
-            layers.append(
-                dl.GeoJSON(
-                    data=geom_4326,
-                    style={
-                        "color": "black",
-                        "weight": 2,
-                        "fillColor": "transparent",
-                        "fillOpacity": 0.0,
-                    },
-                )
-            )
-        except Exception as e:
-            pass
-    
-    # Ajoute les observations
-    for _obs in observations:
-        obs = _obs.to_dict()
-        if obs.get('lon') and obs.get('lat'):
-            layers.append(
-                dl.CircleMarker(
-                    center=[obs['lat'], obs['lon']],
-                    radius=5,
-                    color="blue",
-                    fill=True,
-                    fillOpacity=0.7,
-                    children=dl.Popup(html.Div([
-                        html.Small(f"📅 {obs.get('date_obs', '')}"),
-                        html.Br(),
-                        html.Small(f"🔍 {obs.get('nom_valide', '')}"),
-                    ]))
-                )
-            )
-    
-    # Construire la Map avec bounds si disponible
-    map_kwargs = {
-        "style": {"width": "100%", "height": "400px"},
-        "children": [
-            dl.TileLayer(url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"),
-            *layers,
-        ],
-    }
-    
-    if bounds:
-        map_kwargs["bounds"] = bounds
+    # Ajouter la légende si nécessaire
+    if mode == "tab-geographic":
+        return html.Div([
+            map_div,
+            create_legend(),
+        ], style={"width": "100%", "height": "100%", "position": "relative"})
     else:
-        map_kwargs["center"] = MAP_CENTER
-        map_kwargs["zoom"] = MAP_ZOOM
-    
-    return html.Div([
-        dl.Map(**map_kwargs)
-    ], style={"width": "100%", "height": "400px", "position": "relative"})
+        return map_div
