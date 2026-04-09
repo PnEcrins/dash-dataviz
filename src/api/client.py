@@ -43,7 +43,6 @@ def fetch_all_sites() -> List[Dict[str, Any]]:
 
             offset += limit
 
-        logger.info(f"✓ Chargé {len(all_sites)} aires")
         return all_sites
 
     except requests.exceptions.RequestException as e:
@@ -90,7 +89,6 @@ def fetch_visits(site_id: int, year: int) -> List[Dict[str, Any]]:
 
             offset += limit
 
-        logger.info(f"✓ Chargé {len(all_visits)} visites pour site {site_id} année {year}")
         return all_visits
 
     except requests.exceptions.RequestException as e:

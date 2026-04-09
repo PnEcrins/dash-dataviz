@@ -16,20 +16,13 @@ from src.modules.flore.api.client import (
 )
 from src.modules.flore.data.models import PriorityTaxon, GridCell
 from src.modules.flore.components.taxon_selector import create_taxon_selector
-from src.modules.flore.components.map import create_grid_map, create_map, create_obs_map
+from src.modules.flore.components.map import create_grid_map, create_obs_map
+from src.components.maps import create_map
 from src.modules.flore.components.observations_panel import create_observations_panel
 from src.modules.flore.components.unrecontacted_species_panel import create_unrecontacted_species_panel, create_empty_endangered_species_panel
 
-logger = logging.getLogger(__name__)
 
-# Charger les taxons au démarrage
-logger.info("⏳ Chargement initial des taxons Flore...")
-try:
-    initial_taxa = get_priority_flora_taxa()
-    logger.info(f"✓ {len(initial_taxa)} taxons de flore prioritaire chargés")
-except Exception as e:
-    logger.warning(f"⚠️ Impossible de charger taxons flore: {e}")
-    initial_taxa = []
+logger = logging.getLogger(__name__)
 
 
 def get_flore_layout():
@@ -37,7 +30,7 @@ def get_flore_layout():
     return html.Div(
         [
             # Stores
-            dcc.Store(id="flore-taxa-store", data=[t.to_dict() for t in initial_taxa]),
+            dcc.Store(id="flore-taxa-store", data=None),
             dcc.Store(id="flore-grids-store", data=None),
             dcc.Store(id="flore-all-grids-store", data=None),
             dcc.Store(id="current_id_area", data=None),
@@ -75,7 +68,7 @@ def get_flore_layout():
                                             [
                                                 html.Div(
                                                     id="flore-selector-container",
-                                                    children=create_taxon_selector(initial_taxa),
+                                                    children=create_taxon_selector([]),
                                                 )
                                             ],
                                             style={
@@ -144,9 +137,25 @@ def get_flore_layout():
             id="modal",
             is_open=False,
         ),
+            # Interval pour charger les taxons une seule fois au montage
+            dcc.Interval(
+                id="flore-init-interval",
+                interval=100,  # 100ms
+                max_intervals=1,  # Tourne une seule fois
+            ),
         ],
         style={"height": "100vh", "display": "flex", "flexDirection": "column", "margin": "0", "padding": "0"},
     )
+
+# --- Callback pour charger les taxons au montage de la page Flore ---
+@callback(
+    Output("flore-taxa-store", "data"),
+    Input("flore-init-interval", "n_intervals"),
+)
+def load_taxa_on_page_mount(n_intervals):
+    """Charge les taxons prioritaires au montage de la page Flore."""
+    taxa = get_priority_flora_taxa()
+    return [t.to_dict() for t in taxa]
 
 
 
@@ -179,7 +188,6 @@ def flore_load_grids_species(cd_nom, active_tab):
         return None
     if not cd_nom:
         return None
-    logger.info(f"🔄 [Espèce] Chargement mailles pour taxon {cd_nom}")
     grid_cells = get_observations_by_grid(cd_nom)
     if not grid_cells:
         logger.warning(f"Aucune maille trouvée pour taxon {cd_nom}")
@@ -196,7 +204,6 @@ def flore_load_grids_geographic(active_tab):
     """Charge toutes les grilles en danger (mode géographique uniquement)."""
     if active_tab != "tab-geographic":
         return None
-    logger.info("🔄 [Géo] Chargement de toutes les mailles en danger")
     grid_cells = get_all_grid_cells_with_danger()
     if not grid_cells:
         logger.warning("Aucune maille trouvée")
@@ -257,11 +264,9 @@ def flore_on_grid_click_species_mode(id_area, active_tab, cd_nom, is_open):
     if not id_area or not cd_nom:
         return dash.no_update, dash.no_update
     
-    logger.info(f"🔄 [Espèce-Maille] Chargement observations: cd_nom={cd_nom}, id_area={id_area}")
     
     # Charger les observations du taxon sélectionné
     observations = get_observations_of_cd_nom(cd_nom)
-    logger.info(f"✓ {len(observations) if observations else 0} observations chargées")
     
     # Charger la géométrie de la maille sélectionnée
     geom_4326 = None
@@ -358,7 +363,6 @@ def flore_update_right_panel_geographic(id_area, all_grids_data, cd_nom_geo, act
                 grid_name = g.get("area_name", f"Maille {id_area}")
                 break
     # Sinon afficher la liste des Espèce(s) non recontactée(s) ces 10 dernières années
-    logger.info(f"🔄 [Géo] Chargement Espèce(s) non recontactée(s) ces 10 dernières années pour maille {id_area}")
     endangered_species = get_endangered_species_in_grid(id_area)
     if not endangered_species:
         return create_empty_endangered_species_panel()
@@ -408,10 +412,8 @@ def flore_on_species_click_geo(n_clicks, is_open, current_id_area):
     trigger_id = ctx.triggered_id
     if isinstance(trigger_id, dict) and trigger_id.get("type") == "unrecontacted-species-btn":
         cd_nom = trigger_id.get("cd_nom")
-        logger.info(f"🔄 Espèce cliquée: cd_nom={cd_nom}, current_id_area={current_id_area}")
         
         observations = get_observations_of_cd_nom(cd_nom)
-        logger.info(f"✓ {len(observations) if observations else 0} observations chargées")
         
         # Charger la géométrie de la maille sélectionnée depuis la base de données
         geom_4326 = None

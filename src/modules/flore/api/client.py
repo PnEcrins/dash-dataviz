@@ -48,7 +48,6 @@ def get_priority_flora_taxa() -> List[PriorityTaxon]:
         cur.close()
         conn.close()
 
-        logger.info(f"✓ Chargé {len(taxa)} taxons de flore prioritaire")
         return taxa
 
     except psycopg2.Error as e:
@@ -107,7 +106,6 @@ def get_observations_by_grid(cd_nom: int) -> List[GridCell]:
         cur.close()
         conn.close()
 
-        logger.info(f"✓ Chargé {len(grid_cells)} mailles pour taxon {cd_nom}")
         return grid_cells
 
     except psycopg2.Error as e:
@@ -155,7 +153,6 @@ def get_observations_of_cd_nom(cd_nom: int) -> List[Observation]:
         cur.close()
         conn.close()
 
-        logger.info(f"✓ Chargé {len(observations)} observations pour cd_nom {cd_nom}")
         return observations
 
     except psycopg2.Error as e:
@@ -215,7 +212,6 @@ def get_all_grid_cells_with_danger() -> List[GridCell]:
         cur.close()
         conn.close()
 
-        logger.info(f"✓ Chargé {len(grid_cells)} mailles avec danger")
         return grid_cells
 
     except psycopg2.Error as e:
@@ -270,7 +266,6 @@ def get_endangered_species_in_grid(id_area: int) -> List[Dict[str, Any]]:
         cur.close()
         conn.close()
 
-        logger.info(f"✓ Chargé {len(species)} espèces prioritaires en danger pour maille {id_area}")
         return species
 
     except psycopg2.Error as e:
@@ -310,10 +305,8 @@ def get_grid_geometry(id_area: int) -> str:
                 "geometry": geom,
                 "properties": {}
             }
-            logger.info(f"✓ Géométrie chargée pour maille {id_area}")
             return feature
         else:
-            logger.warning(f"❌ Aucune géométrie trouvée pour maille {id_area}")
             return None
             
     except psycopg2.Error as e:

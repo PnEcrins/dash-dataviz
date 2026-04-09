@@ -12,23 +12,23 @@ from src.modules.aigle.components.visits_panel import create_visits_panel, creat
 
 logger = logging.getLogger(__name__)
 
-# Charger les données au démarrage
-logger.info("⏳ Chargement initial des données Aigle...")
-initial_sites = fetch_all_sites()
-initial_sites_dict = [Site.from_api(site).to_dict() for site in initial_sites]
-initial_years = fetch_all_years()
-logger.info(f"✓ {len(initial_sites_dict)} aires et {len(initial_years)} années chargées")
-
 
 def get_aigle_layout():
     """Retourne le layout du module Aigle."""
     return html.Div(
         [
             # Stores
-            dcc.Store(id="aigle-sites-data-store", data=initial_sites_dict),
+            dcc.Store(id="aigle-sites-data-store", data=None),
             dcc.Store(id="aigle-visits-data-store", data=None),
-            dcc.Store(id="aigle-years-list-store", data=initial_years),
+            dcc.Store(id="aigle-years-list-store", data=None),
             dcc.Store(id="aigle-selected-site-store", data=None),
+            
+            # Interval pour charger les données une seule fois au montage
+            dcc.Interval(
+                id="aigle-init-interval",
+                interval=100,  # 100ms
+                max_intervals=1,  # Tourne une seule fois
+            ),
 
             # Header
             html.Div(
@@ -103,6 +103,26 @@ def get_aigle_layout():
     )
 
 
+# --- Callbacks pour charger les données au montage de la page Aigle ---
+@callback(
+    Output("aigle-sites-data-store", "data"),
+    Input("aigle-init-interval", "n_intervals"),
+)
+def aigle_load_sites(n_intervals):
+    """Charge les sites au montage de la page Aigle."""
+    sites = fetch_all_sites()
+    return [Site.from_api(site).to_dict() for site in sites]
+
+
+@callback(
+    Output("aigle-years-list-store", "data"),
+    Input("aigle-init-interval", "n_intervals"),
+)
+def aigle_load_years(n_intervals):
+    """Charge les années au montage de la page Aigle."""
+    return fetch_all_years()
+
+
 # Callbacks Aigle
 @callback(
     Output("aigle-year-selector", "options"),
@@ -174,12 +194,10 @@ def aigle_load_and_display_visits(selected_site_id, year, sites_data):
     if not site_name:
         return None, create_empty_visits_panel()
 
-    logger.info(f"🔄 Chargement visites pour site {selected_site_id} année {year}")
     visits_data = fetch_visits(selected_site_id, year)
 
     visits = [Visit.from_api(visit) for visit in visits_data]
 
-    logger.info(f"✓ {len(visits)} visites chargées")
 
     panel = create_visits_panel(site_name, visits)
     visits_dict = [visit.to_dict() for visit in visits]
