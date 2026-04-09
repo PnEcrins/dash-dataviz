@@ -163,6 +163,7 @@ def create_obs_map(observations: List[Observation], geom_4326: str = None):
                         "fillColor": "transparent",
                         "fillOpacity": 0.0,
                     },
+                    pane="overlayPane",
                 )
             )
 
@@ -172,6 +173,8 @@ def create_obs_map(observations: List[Observation], geom_4326: str = None):
         for _obs in observations:
             obs = _obs.to_dict()
             if obs.get('lon') and obs.get('lat'):
+                date_obs = obs.get('date_obs', '')
+                nom = obs.get('nom_valide', '')
                 layers.append(
                     dl.CircleMarker(
                         center=[obs['lat'], obs['lon']],
@@ -179,11 +182,21 @@ def create_obs_map(observations: List[Observation], geom_4326: str = None):
                         color="blue",
                         fill=True,
                         fillOpacity=0.7,
-                        children=dl.Popup(html.Div([
-                            html.Small(f"📅 {obs.get('date_obs', '')}"),
-                            html.Br(),
-                            html.Small(f"🔍 {obs.get('nom_valide', '')}"),
-                        ]))
+                        pane="markerPane",
+                        children=[
+                            dl.Popup(
+                                children=[
+                                    html.Div([
+                                        html.Small(f"📅 {date_obs}", style={"display": "block"}),
+                                        html.Small(f"🔍 {nom}", style={"display": "block", "marginTop": "5px"}),
+                                        html.Small(f" Observateur : {obs.get('observers')} ", style={"display": "block", "marginTop": "5px"}),
+                                    ])
+                                ],
+                                closeButton=True,
+                                autoClose=False,
+                            )
+                        ],
+                        n_clicks=0,
                     )
                 )
     
@@ -201,11 +214,12 @@ def create_grid_map(grid_cells: List[GridCell], mode: str = "tab-geographic") ->
     Args:
         grid_cells: Liste des mailles à afficher
         mode: Mode d'affichage ("tab-species" ou "tab-geographic")
+        observations: Liste optionnelle des observations à afficher comme CircleMarkers
 
     Returns:
         Composant carte Leaflet
     """
-    # Créer les polygones pour chaque maille
+    # Créer les polygones pour chaque maille EN PREMIER (elles seront en arrière)
     layers = []
     for cell in grid_cells:
         if not cell.geom_4326:
@@ -233,6 +247,8 @@ def create_grid_map(grid_cells: List[GridCell], mode: str = "tab-geographic") ->
         geojson_layer = dl.GeoJSON(
             data=feature,
             id={"type": "grid-cell", "index": cell.id_area},
+            interactive=False,
+            pane="overlayPane",
             style={
                 "color": "transparent",
                 "weight": 0,
@@ -248,6 +264,8 @@ def create_grid_map(grid_cells: List[GridCell], mode: str = "tab-geographic") ->
             },
         )
         layers.append(geojson_layer)
+
+
 
     # Utiliser la nouvelle fonction create_map
     map_component = create_map(
