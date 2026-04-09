@@ -134,7 +134,6 @@ def get_flore_layout():
                 ],
                 style={"display": "flex", "gap": "0", "flex": "1", "minHeight": "0"},
             ),
-            dbc.Button("Open modal", id="open", n_clicks=0),
             dbc.Modal(
             [
                 dbc.ModalHeader(dbc.ModalTitle("Header")),

@@ -17,31 +17,6 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_
 app.layout = html.Div(
     [
         dcc.Location(id="url", refresh=False),
-
-        # Navigation bar
-        html.Div(
-            [
-                dcc.Link(
-                    html.Button("🦅 Aigle", id="btn-aigle", n_clicks=0,
-                               style={"marginRight": "10px", "padding": "10px 20px", "cursor": "pointer"}),
-                    href="/aigle",
-                    style={"textDecoration": "none"}
-                ),
-                dcc.Link(
-                    html.Button("🌿 Flore", id="btn-flore", n_clicks=0,
-                               style={"padding": "10px 20px", "cursor": "pointer"}),
-                    href="/flore",
-                    style={"textDecoration": "none"}
-                ),
-            ],
-            style={
-                "padding": "10px",
-                "backgroundColor": "#f8f9fa",
-                "borderBottom": "1px solid #dee2e6",
-                "flexShrink": "0",
-            }
-        ),
-
         # Container pour les modules
         html.Div(
             id="modules-container",
