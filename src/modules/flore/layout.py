@@ -41,7 +41,7 @@ def get_flore_layout():
             dcc.Store(id="flore-grids-store", data=None),
             dcc.Store(id="flore-all-grids-store", data=None),
             dcc.Store(id="current_id_area", data=None),
-            dcc.Store(id="flore-selected-taxon-store", data=None),
+            dcc.Store(id="current-selected-taxon-store", data=None),
             dcc.Store(id="flore-selected-species-geo-store", data=None),
 
             # Header
@@ -170,7 +170,7 @@ def flore_update_taxon_selector(taxa_data):
 # --- Mode espèce : charger les grilles pour le taxon sélectionné ---
 @callback(
     Output("flore-grids-store", "data"),
-    Input("flore-selected-taxon-store", "data"),
+    Input("current-selected-taxon-store", "data"),
     Input("flore-left-tabs", "active_tab"),
 )
 def flore_load_grids_species(cd_nom, active_tab):
@@ -271,7 +271,7 @@ def flore_update_map_geographic(all_grids_data, active_tab):
 
 
 @callback(
-    Output("flore-selected-taxon-store", "data"),
+    Output("current-selected-taxon-store", "data"),
     Input("flore-taxon-selector", "value"),
     Input("flore-taxa-store", "data"),
 )
@@ -279,13 +279,6 @@ def flore_on_taxon_change(cd_nom, taxa_data):
     """Quand le taxon sélectionné change."""
     if not cd_nom or not taxa_data:
         return None
-
-    # Trouver le taxon sélectionné
-    selected_taxon = None
-    for t in taxa_data:
-        if t["cd_nom"] == cd_nom:
-            selected_taxon = t
-            break
 
     return cd_nom
 
@@ -305,6 +298,37 @@ def flore_on_grid_click(n_clicks):
         return trigger_id.get("index")
 
     return None
+
+
+# --- Mode espèce : quand on clique sur une maille, charge et affiche les observations dans la modale ---
+@callback(
+    Output("modal", "is_open", allow_duplicate=True),
+    Output("modal-map-container", "children", allow_duplicate=True),
+    Input("current_id_area", "data"),
+    Input("flore-left-tabs", "active_tab"),
+    State("current-selected-taxon-store", "data"),
+    State("modal", "is_open"),
+    prevent_initial_call=True,
+)
+def flore_on_grid_click_species_mode(id_area, active_tab, cd_nom, is_open):
+    """Quand on clique sur une maille en mode espèce, affiche les observations du taxon sélectionné."""
+    if active_tab != "tab-species":
+        return dash.no_update, dash.no_update
+    if not id_area or not cd_nom:
+        return dash.no_update, dash.no_update
+    
+    logger.info(f"🔄 [Espèce-Maille] Chargement observations: cd_nom={cd_nom}, id_area={id_area}")
+    
+    # Charger les observations du taxon sélectionné
+    observations = get_observations_of_cd_nom(cd_nom)
+    logger.info(f"✓ {len(observations) if observations else 0} observations chargées")
+    
+    # Charger la géométrie de la maille sélectionnée
+    geom_4326 = None
+    if id_area:
+        geom_4326 = get_grid_geometry(id_area)
+    
+    return not is_open, create_obs_map(observations, geom_4326=geom_4326)
 
 
 # Panneau droit: affiche observations ou Espèce(s) non recontactée(s) ces 10 dernières années (quand on clique)
@@ -394,7 +418,7 @@ def flore_on_species_click_geo(n_clicks, is_open, current_id_area):
         
         return not is_open, create_obs_map(observations, geom_4326=geom_4326)
 
-    return dash.no_update, dash.no_updateS
+    return dash.no_update, dash.no_update
 
 
 
