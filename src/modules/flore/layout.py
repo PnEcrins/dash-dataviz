@@ -9,7 +9,7 @@ from src.modules.flore.api.client import (
     get_priority_flora_taxa,
     get_observations_by_grid,
     get_observations_of_cd_nom,
-    get_all_grid_cells_with_danger,
+    get_all_grid_unrecontacted,
     get_unrecontacted_species_in_grid,
     get_grid_geometry,
 )
@@ -38,7 +38,6 @@ def get_flore_layout():
             html.Div(
                 [
                     html.H1("🌿 Flore Prioritaire", style={"margin": "0"}),
-                    html.P("Suivi de l'évolution spatiale et temporelle", style={"margin": "0"}),
                 ],
                 className="header",
                 style={
@@ -197,7 +196,7 @@ def flore_load_grids_geographic(active_tab):
     """Charge toutes les grilles en danger (mode géographique uniquement)."""
     if active_tab != "tab-geographic":
         return None
-    grid_cells = get_all_grid_cells_with_danger()
+    grid_cells = get_all_grid_unrecontacted()
     if not grid_cells:
         logger.warning("Aucune maille trouvée")
         return None

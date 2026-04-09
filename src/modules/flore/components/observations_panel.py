@@ -1,19 +1,18 @@
 """Composant liste observations maille - Module Flore."""
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from dash import html
 import dash_bootstrap_components as dbc
-from src.modules.flore.data.models import Observation
 
 
 def create_observations_panel(
     grid_name: Optional[str] = None,
-    observations: Optional[List[Observation]] = None,
+    observations: Optional[List[Dict[str, Any]]] = None,
 ) -> html.Div:
     """Crée le panneau observations d'une maille.
 
     Args:
         grid_name: Nom de la maille sélectionnée
-        observations: Liste des observations
+        observations: Liste des observations (dict avec clés: date_obs, nom_valide, nom_vern, observers, comment_description)
 
     Returns:
         Composant panneau observations
@@ -30,21 +29,21 @@ def create_observations_panel(
                     [
                         html.Div(
                             [
-                                html.Strong(obs.date_obs.isoformat()),
+                                html.Strong(obs.get('date_obs')),
                                 html.Br(),
                                 html.Small(
-                                    f"{obs.nom_valide} ({obs.nom_vern or 'N/A'})",
+                                    f"{obs.get('nom_valide')} ({obs.get('nom_vern') or 'N/A'})",
                                     className="text-muted d-block",
                                 ),
                                 html.Small(
-                                    f"Obs: {obs.observers or 'N/A'}",
+                                    f"Obs: {obs.get('observers') or 'N/A'}",
                                     className="text-muted d-block",
                                 ),
                             ]
                         ),
-                        html.Hr() if obs.comment_description else None,
-                        html.Small(obs.comment_description, className="d-block text-muted")
-                        if obs.comment_description
+                        html.Hr() if obs.get('comment_description') else None,
+                        html.Small(obs.get('comment_description'), className="d-block text-muted")
+                        if obs.get('comment_description')
                         else None,
                     ],
                     style={"padding": "10px"},

@@ -3,15 +3,14 @@ from typing import Any, Dict, List, Optional
 import json
 import dash_leaflet as dl
 from dash import html
-from src.modules.aigle.data.models import Site
 from src.components.maps import create_map
 
 
-def create_map_component(sites: List[Site], selected_site_id: Optional[int] = None) -> html.Div:
+def create_map_component(sites: List[Dict[str, Any]], selected_site_id: Optional[int] = None) -> html.Div:
     """Crée le composant carte Leaflet avec CircleMarkers.
 
     Args:
-        sites: Liste des aires à afficher
+        sites: Liste des aires (éléments dict avec clés: id_base_site, base_site_name, base_site_code, geom, aire_valid)
         selected_site_id: ID de l'aire sélectionnée (pour highlight)
 
     Returns:
@@ -20,11 +19,12 @@ def create_map_component(sites: List[Site], selected_site_id: Optional[int] = No
 
     markers = []
     for site in sites:
-        if not site.geom:
+        geom_data = site.get('geom') or site.get('st_asgeojson')
+        if not geom_data:
             continue
 
         try:
-            geom = json.loads(site.geom) if isinstance(site.geom, str) else site.geom
+            geom = json.loads(geom_data) if isinstance(geom_data, str) else geom_data
         except json.JSONDecodeError:
             continue
 
@@ -43,11 +43,12 @@ def create_map_component(sites: List[Site], selected_site_id: Optional[int] = No
 
         lat, lon = coords[1], coords[0]
 
-        is_valid = site.aire_valid
+        is_valid = site.get('aire_valid')
         color = "green" if is_valid else "red"
         fill_color = "green" if is_valid else "red"
 
-        is_selected = site.id_base_site == selected_site_id
+        site_id = site.get('id_base_site')
+        is_selected = site_id == selected_site_id
         radius = 10 if is_selected else 6
         weight = 3 if is_selected else 2
         opacity = 1.0 if is_selected else 0.7
@@ -55,13 +56,13 @@ def create_map_component(sites: List[Site], selected_site_id: Optional[int] = No
         marker = dl.CircleMarker(
             center=[lat, lon],
             radius=radius,
-            children=dl.Popup(f"{site.base_site_name} ({site.base_site_code})"),
+            children=dl.Popup(f"{site.get('base_site_name')} ({site.get('base_site_code')})"),
             color=color,
             weight=weight,
             opacity=opacity,
             fillColor=fill_color,
             fillOpacity=0.6,
-            id={"type": "map-marker", "index": site.id_base_site},
+            id={"type": "map-marker", "index": site_id},
         )
         markers.append(marker)
 

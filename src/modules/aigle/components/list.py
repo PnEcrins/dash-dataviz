@@ -1,15 +1,14 @@
 """Composant liste des aires - Module Aigle."""
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from dash import html, dcc, callback, Input, Output
 import dash_bootstrap_components as dbc
-from src.modules.aigle.data.models import Site
 
 
-def create_sites_list(sites: List[Site], selected_site_id: Optional[int] = None) -> html.Div:
+def create_sites_list(sites: List[Dict[str, Any]], selected_site_id: Optional[int] = None) -> html.Div:
     """Crée la liste complète des aires.
 
     Args:
-        sites: Liste des aires à afficher
+        sites: Liste des aires (éléments dict avec clés: id_base_site, base_site_name, base_site_code, discover_year)
         selected_site_id: ID de l'aire sélectionnée
 
     Returns:
@@ -18,26 +17,27 @@ def create_sites_list(sites: List[Site], selected_site_id: Optional[int] = None)
 
     list_items = []
     for site in sites:
-        is_selected = site.id_base_site == selected_site_id
+        site_id = site.get('id_base_site')
+        is_selected = site_id == selected_site_id
 
         item = dbc.ListGroupItem(
             [
                 html.Div(
                     [
-                        html.H6(site.base_site_name, className="mb-0"),
+                        html.H6(site.get('base_site_name'), className="mb-0"),
                         html.Small(
-                            f"Code: {site.base_site_code}",
+                            f"Code: {site.get('base_site_code')}",
                             className="text-muted",
                         ),
                         html.Br(),
                         html.Small(
-                            f"Découverte: {site.discover_year if site.discover_year else 'N/A'}",
+                            f"Découverte: {site.get('discover_year') or 'N/A'}",
                             className="text-muted",
                         ),
                     ]
                 )
             ],
-            id={"type": "site-list-item", "index": site.id_base_site},
+            id={"type": "site-list-item", "index": site_id},
             color="light" if is_selected else None,
             active=is_selected,
             style={"cursor": "pointer", "padding": "12px"},

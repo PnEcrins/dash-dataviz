@@ -5,7 +5,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from typing import List, Dict, Any
 
-from config import DB_CONFIG
+from config import DB_CONFIG, CODE_TAXHUB_LIST
 
 logger = logging.getLogger(__name__)
 
@@ -21,16 +21,15 @@ def get_priority_flora_taxa() -> List[Dict[str, Any]]:
         t.nom_vern
     FROM taxonomie.bib_listes bl
     JOIN taxonomie.cor_nom_liste cnl ON bl.id_liste = cnl.id_liste
-    JOIN taxonomie.bib_noms bn ON cnl.id_nom = bn.id_nom
-    JOIN taxonomie.taxref t ON bn.cd_nom = t.cd_nom
-    WHERE bl.nom_liste = 'Priority Flora'
+    JOIN taxonomie.taxref t ON cnl.cd_nom = t.cd_nom
+    WHERE bl.nom_liste = %s
     ORDER BY t.nom_valide
     """
 
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute(query)
+        cur.execute(query, (CODE_TAXHUB_LIST,))
 
         taxa = [dict(row) for row in cur.fetchall()]
 
@@ -120,7 +119,7 @@ def get_observations_of_cd_nom(cd_nom: int) -> List[Dict[str, Any]]:
         return []
 
 
-def get_all_grid_cells_with_danger() -> List[Dict[str, Any]]:
+def get_all_grid_unrecontacted() -> List[Dict[str, Any]]:
     """Récupère toutes les mailles avec au moins un taxon PRIORITAIRE en danger (non vu depuis 10 ans)."""
     query = """
     SELECT
@@ -136,11 +135,10 @@ def get_all_grid_cells_with_danger() -> List[Dict[str, Any]]:
     JOIN gn_synthese.synthese s ON cas.id_synthese = s.id_synthese
     JOIN ref_geo.bib_areas_types bat ON la.id_type = bat.id_type
     JOIN taxonomie.taxref t ON s.cd_nom = t.cd_nom
-    JOIN taxonomie.bib_noms bn ON t.cd_nom = bn.cd_nom
-    JOIN taxonomie.cor_nom_liste cnl ON bn.id_nom = cnl.id_nom
+    JOIN taxonomie.cor_nom_liste cnl ON t.cd_nom = cnl.cd_nom
     JOIN taxonomie.bib_listes bl ON cnl.id_liste = bl.id_liste
     WHERE bat.type_code = 'M1'
-        AND bl.nom_liste = 'Priority Flora'
+        AND bl.nom_liste = %s
     GROUP BY la.id_area, la.area_name, la.geom_4326
     HAVING MAX(s.date_min::DATE) < CURRENT_DATE - INTERVAL '10 years'
     """
@@ -148,7 +146,7 @@ def get_all_grid_cells_with_danger() -> List[Dict[str, Any]]:
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute(query)
+        cur.execute(query, (CODE_TAXHUB_LIST,))
 
         grid_cells = [dict(row) for row in cur.fetchall()]
 
@@ -174,11 +172,10 @@ def get_unrecontacted_species_in_grid(id_area: int) -> List[Dict[str, Any]]:
     FROM gn_synthese.synthese s
     JOIN taxonomie.taxref t ON s.cd_nom = t.cd_nom
     JOIN gn_synthese.cor_area_synthese cas ON s.id_synthese = cas.id_synthese
-    JOIN taxonomie.bib_noms bn ON t.cd_nom = bn.cd_nom
-    JOIN taxonomie.cor_nom_liste cnl ON bn.id_nom = cnl.id_nom
+    JOIN taxonomie.cor_nom_liste cnl ON t.cd_nom = cnl.cd_nom
     JOIN taxonomie.bib_listes bl ON cnl.id_liste = bl.id_liste
     WHERE cas.id_area = %s
-        AND bl.nom_liste = 'Priority Flora'
+        AND bl.nom_liste = %s
     GROUP BY t.cd_nom, t.nom_valide, t.nom_vern
     HAVING MAX(s.date_min::DATE) < CURRENT_DATE - INTERVAL '10 years'
     ORDER BY MAX(s.date_min::DATE) ASC
@@ -187,7 +184,7 @@ def get_unrecontacted_species_in_grid(id_area: int) -> List[Dict[str, Any]]:
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute(query, (id_area,))
+        cur.execute(query, (id_area, CODE_TAXHUB_LIST))
 
         species = [dict(row) for row in cur.fetchall()]
 

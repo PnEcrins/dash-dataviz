@@ -2,10 +2,10 @@
 import logging
 from dash import html, dcc, callback, Input, Output, ALL, ctx
 import dash_bootstrap_components as dbc
+from typing import List, Dict, Any
 
 import config
 from src.modules.aigle.api.client import fetch_all_sites, fetch_visits, fetch_all_years
-from src.modules.aigle.data.models import Site, Visit
 from src.modules.aigle.components.map import create_map_component
 from src.modules.aigle.components.list import create_sites_list, create_empty_list
 from src.components.maps import create_map
@@ -113,7 +113,7 @@ def get_aigle_layout():
 def aigle_load_sites(n_intervals):
     """Charge les sites au montage de la page Aigle."""
     sites = fetch_all_sites()
-    return [Site.from_api(site).to_dict() for site in sites]
+    return sites
 
 
 @callback(
@@ -153,24 +153,8 @@ def aigle_update_map_and_list(sites_data, selected_site_id):
     if not sites_data:
         return create_map(), create_empty_list()
 
-    sites = [
-        Site(
-            id_base_site=site["id_base_site"],
-            base_site_name=site["base_site_name"],
-            base_site_code=site["base_site_code"],
-            discover_year=site.get("discover_year"),
-            base_site_description=site.get("base_site_description"),
-            altitude_min=site.get("altitude_min"),
-            altitude_max=site.get("altitude_max"),
-            orientation=site.get("orientation"),
-            geom=site.get("geom"),
-            aire_valid=site.get("aire_valid"),
-        )
-        for site in sites_data
-    ]
-
-    map_component = create_map_component(sites, selected_site_id)
-    list_component = create_sites_list(sites, selected_site_id)
+    map_component = create_map_component(sites_data, selected_site_id)
+    list_component = create_sites_list(sites_data, selected_site_id)
 
     return map_component, list_component
 
@@ -198,13 +182,9 @@ def aigle_load_and_display_visits(selected_site_id, year, sites_data):
 
     visits_data = fetch_visits(selected_site_id, year)
 
-    visits = [Visit.from_api(visit) for visit in visits_data]
+    panel = create_visits_panel(site_name, visits_data)
 
-
-    panel = create_visits_panel(site_name, visits)
-    visits_dict = [visit.to_dict() for visit in visits]
-
-    return visits_dict, panel
+    return visits_data, panel
 
 
 @callback(
