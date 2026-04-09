@@ -98,7 +98,7 @@ def create_legend() -> html.Div:
     )
 
 
-def create_map(layers=None, center=None, zoom=None, map_id="map", viewport_bounds=None):
+def create_map(layers=None, center=None, zoom=None, map_id="map", viewport_bounds=None, height="100%"):
     """Crée une carte avec des layers.
     
     Args:
@@ -107,6 +107,7 @@ def create_map(layers=None, center=None, zoom=None, map_id="map", viewport_bound
         zoom: niveau de zoom
         map_id: ID unique pour la carte (par défaut "map")
         viewport_bounds: bounds pour le viewport [[min_lat, min_lon], [max_lat, max_lon]]
+        height: hauteur de la carte (par défaut "500px")
     """
     if layers is None:
         layers = []
@@ -114,7 +115,7 @@ def create_map(layers=None, center=None, zoom=None, map_id="map", viewport_bound
     
     map_props = {
         "id": map_id,
-        "style": {"width": "100%", "height": "500px"},  # Hauteur explicite
+        "style": {"width": "100%", "height": height},
         "children": tile_layers + layers,
     }
     
@@ -204,6 +205,7 @@ def create_obs_map(observations: List[Observation], geom_4326: str = None):
         layers=layers,
         viewport_bounds=viewport_bounds,
         map_id="obs-map",
+        height="500px"
     )
 
 def create_grid_map(grid_cells: List[GridCell], mode: str = "tab-geographic") -> html.Div:
@@ -276,6 +278,7 @@ def create_grid_map(grid_cells: List[GridCell], mode: str = "tab-geographic") ->
         layers=layers,
         center=MAP_CENTER,
         zoom=MAP_ZOOM,
+        height="100%",  # La carte doit remplir le conteneur
     )
     # Ajouter la légende si nécessaire
     if mode == "tab-geographic":
