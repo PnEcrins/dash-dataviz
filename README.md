@@ -1,6 +1,6 @@
 # Dash dataviz
 
-Visualisation interactive des données issu de différentes sources
+Visualisation interactive des données issues de différentes sources (GeoNature, API etc.)
 
 ### Modules disponivles
 
@@ -9,8 +9,13 @@ Visualisation interactive des données issu de différentes sources
 
 ## Installation
 
+Créer le fichier de conf et remplissez le :
+
+` cp config.py.sample config.py`
+
+Installer les dépendances :
+
 ```bash
-# Installer les dépendances
 python3 -m venv venv
 pip install -r requirements.txt
 ```

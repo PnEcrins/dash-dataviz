@@ -8,6 +8,7 @@ import os
 DEBUG = True
 PORT = 8050
 HOST = "127.0.0.1"
+URL_PREFIX = ''  # ex: '/dataviz/' pour un sous-chemin
 
 # ============================================================================
 # GEONATURE AIGLE APIS
@@ -47,3 +48,4 @@ MAP_BASE_LAYERS = [
         "https://data.geopf.fr/private/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&apikey=ign_scan_ws&LAYER=GEOGRAPHICALGRIDSYSTEMS.MAPS&EXCEPTIONS=text/xml&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/jpeg&STYLE=normal",
 ]
         # "https://data.geopf.fr/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/jpeg&STYLE=normal",
+CODE_TAXHUB_LIST = 'Priority Flora'

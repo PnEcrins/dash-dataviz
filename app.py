@@ -3,13 +3,19 @@ import logging
 from dash import html
 import dash
 import dash_bootstrap_components as dbc
+import config
 
 # Configuration logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialiser l'app Dash avec Dash Pages
-app = dash.Dash(__name__, use_pages=True, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(
+    __name__,
+    use_pages=True,
+    external_stylesheets=[dbc.themes.BOOTSTRAP],
+    requests_pathname_prefix=config.URL_PREFIX
+)
 
 app.layout = html.Div(
     dash.page_container,

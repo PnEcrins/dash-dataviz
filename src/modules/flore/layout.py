@@ -55,25 +55,8 @@ def get_flore_layout():
                         [
                             dbc.Tabs(
                                 id="flore-left-tabs",
-                                active_tab="tab-species",
+                                active_tab="tab-geographic",
                                 children=[
-                                    dbc.Tab(
-                                        label="🔍 Entrée espèce",
-                                        tab_id="tab-species",
-                                        children=html.Div(
-                                            [
-                                                html.Div(
-                                                    id="flore-selector-container",
-                                                    children=create_taxon_selector([]),
-                                                )
-                                            ],
-                                            style={
-                                                "height": "100%",
-                                                "padding": "1rem",
-                                                "overflowY": "auto",
-                                            },
-                                        ),
-                                    ),
                                     dbc.Tab(
                                         label="🗺️ Entrée géographique",
                                         tab_id="tab-geographic",
@@ -85,12 +68,46 @@ def get_flore_layout():
                                             },
                                             children=[
                                                 html.P(
-                                                    "Mode géographique: affichage de toutes les mailles",
-                                                    className="text-muted",
+                                                    "Affichage de toutes les mailles ayant des espèces prioritaires non recontactées ces 10 dernières années",
+                                                    className="text-muted flore-info-block",
+                                                ),
+                                                html.P(
+                                                    "Cliquez sur une maille pour voir la liste de espèces non recontactéss",
+                                                    className="text-muted flore-info-block",
+                                                ),
+                                                html.P(
+                                                    "Cliquez sur l'espèce dans le panneau latéral de droite pour voir les observations précises de l'espèce",
+                                                    className="text-muted flore-info-block",
                                                 ),
                                             ]
                                         ),
                                     ),
+                                    dbc.Tab(
+                                        label="🔍 Entrée espèce",
+                                        tab_id="tab-species",
+                                        children=html.Div(
+                                            [
+                                                html.Div(
+                                                    id="flore-selector-container",
+                                                    children=create_taxon_selector([]),
+                                                ),
+                                                html.P(
+                                                    "Les mailles vertes correspondent aux mailles où l'espèce a été vue il y a moins de 10 ans, et les mailles rouges à celles où l'espèce n'a pas été vue ces 10 dernières années.",
+                                                    className="text-muted flore-info-block",
+                                                ),
+                                                html.P(
+                                                    "Cliquez sur une maille pour voir les observations de l'espèce en point",
+                                                    className="text-muted flore-info-block",
+                                                ),
+                                            ],
+                                            style={
+                                                "height": "100%",
+                                                "padding": "1rem",
+                                                "overflowY": "auto",
+                                            },
+                                        ),
+                                    ),
+
                                 ],
                             ),
                         ],
@@ -98,6 +115,7 @@ def get_flore_layout():
                             "flex": "0 0 25%",
                             "minHeight": "0",
                             "borderRight": "1px solid #ddd",
+                            "marginTop": "1rem",
                             "display": "flex",
                             "flexDirection": "column",
                         },
