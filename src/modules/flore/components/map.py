@@ -7,7 +7,7 @@ from src.components.maps import create_map
 from config import MAP_CENTER, MAP_ZOOM
 
 
-def _create_map(layers=None, center=None, zoom=None, map_id="map", viewport_bounds=None, height="92vh"):
+def _create_map(layers=None, center=None, zoom=None, map_id="map", viewport_bounds=None, height="100%"):
     return create_map(
         layers=layers,
         center=center,

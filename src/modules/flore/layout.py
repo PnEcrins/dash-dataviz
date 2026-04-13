@@ -34,15 +34,11 @@ def get_flore_layout():
 
         # Header
         html.Div([
-            html.H1("🌿 Flore Prioritaire", style={"margin": "0"}),
-        ], className="header", style={
-            "padding": "1rem",
-            "borderBottom": "1px solid #ddd",
-            "flexShrink": "0",
-        }),
+            html.H1("🌿 Flore Prioritaire"),
+        ], id="flore-header"),
 
-        # Layout principal Bootstrap - utilise flex: 1 pour prendre l'espace restant
-        dbc.Container([
+        # Body principal
+        html.Div([
             dbc.Row([
                 # Colonne gauche (tabs)
                 dbc.Col([
@@ -66,7 +62,7 @@ def get_flore_layout():
                                         "Cliquez sur l'espèce dans le panneau latéral de droite pour voir les observations précises de l'espèce",
                                         className="text-muted flore-info-block",
                                     ),
-                                ], style={"padding": "1rem", "overflowY": "auto", "minHeight": "0"}),
+                                ], className="flore-panel-body"),
                             ),
                             dbc.Tab(
                                 label="🔍 Entrée espèce",
@@ -84,18 +80,17 @@ def get_flore_layout():
                                         "Cliquez sur une maille pour voir les observations de l'espèce en point",
                                         className="text-muted flore-info-block",
                                     ),
-                                ], style={"padding": "1rem", "overflowY": "auto", "minHeight": "0"}),
+                                ], className="flore-panel-body"),
                             ),
                         ],
                     ),
-                ], width=12, md=3, style={"borderRight": "1px solid #ddd", "marginTop": "1rem", "minHeight": "0", "display": "flex", "flexDirection": "column"}),
+                ], width=12, md=3, className="flore-col-panel"),
 
                 # Carte (centrale)
                 dbc.Col(
-                    id="flore-map-container",
+                    id="flore-map-col",
                     children=_create_map(),
                     width=12, md=6,
-                    style={"minHeight": "0", "padding": "0", "display": "flex", "flexDirection": "column"},
                 ),
 
                 # Panneau droit
@@ -103,10 +98,10 @@ def get_flore_layout():
                     id="flore-right-panel",
                     children=None,
                     width=12, md=3,
-                    style={"borderLeft": "1px solid #ddd", "padding": "1rem", "overflowY": "auto", "minHeight": "0"},
+                    className="flore-col-panel",
                 ),
-            ], className="g-0", style={"display": "flex", "minHeight": "0", "flex": "1"}),
-        ], fluid=True, style={"flex": "1", "minHeight": "0", "display": "flex", "flexDirection": "column"}),
+            ], className="g-0 flore-main-row"),
+        ], id="flore-body"),
 
         dbc.Modal([
             dbc.ModalBody(
@@ -120,7 +115,7 @@ def get_flore_layout():
             interval=100,  # 100ms
             max_intervals=1,  # Tourne une seule fois
         ),
-    ], className="fullheight-flex")
+    ], id="flore-app")
 
 # --- Callback pour charger les taxons au montage de la page Flore ---
 @callback(
@@ -169,7 +164,7 @@ def flore_load_grids_geographic(active_tab):
 
 # --- Carte : mode espèce ---
 @callback(
-    Output("flore-map-container", "children"),
+    Output("flore-map-col", "children"),
     Input("flore-grids-store", "data"),
     Input("flore-left-tabs", "active_tab"),
 )
@@ -211,7 +206,7 @@ def flore_on_grid_click_species_mode(id_area, active_tab, cd_nom, is_open):
 
 # --- Carte : mode géographique ---
 @callback(
-    Output("flore-map-container", "children", allow_duplicate=True),
+    Output("flore-map-col", "children", allow_duplicate=True),
     Input("flore-all-grids-store", "data"),
     Input("flore-left-tabs", "active_tab"),
     prevent_initial_call=True,
