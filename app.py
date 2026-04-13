@@ -19,7 +19,15 @@ app = dash.Dash(
 
 app.layout = html.Div(
     dash.page_container,
-    style={"height": "100vh", "width": "100vw", "margin": "0", "padding": "0", "overflow": "hidden"}
+    id="_dash-app-container",
+    style={
+        "height": "100vh",
+        "display": "flex",
+        "flexDirection": "column",
+        "margin": "0",
+        "padding": "0",
+        "overflow": "hidden"
+    }
 )
 
 if __name__ == "__main__":

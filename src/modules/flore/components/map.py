@@ -7,6 +7,17 @@ from src.components.maps import create_map
 from config import MAP_CENTER, MAP_ZOOM
 
 
+def _create_map(layers=None, center=None, zoom=None, map_id="map", viewport_bounds=None, height="92vh"):
+    return create_map(
+        layers=layers,
+        center=center,
+        zoom=zoom,
+        map_id=map_id,
+        viewport_bounds=viewport_bounds,
+        height=height
+    )
+
+
 def get_grid_color(nb_species: int) -> str:
     """Génère une couleur selon le nombre d'espèce.
 
@@ -232,7 +243,7 @@ def create_grid_map(grid_cells, mode: str = "tab-geographic") -> html.Div:
 
 
     # Utiliser la nouvelle fonction create_map
-    map_component = create_map(
+    map_component = _create_map(
         layers=layers,
         center=MAP_CENTER,
         zoom=MAP_ZOOM,

@@ -1,4 +1,64 @@
-/* Bloc d'information contextuelle Flore */
+/* === BASE LAYOUT (à mettre une fois au niveau racine) === */
+/* Cette section gère la hauteur fullscreen sans devoir la répéter partout */
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* Conteneur principal Dash */
+#_dash-app-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Important: Élément de contenu des pages Dash */
+#_dash-page-contents {
+    flex: 1;
+    min-height: 0; /* Crucial! Sinon flex:1 ne fonctionne pas */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Classe réutilisable pour les conteneurs qui doivent être fullheight */
+.fullheight-flex {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Container Bootstrap fullheight */
+.container-fullheight {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* === Bootstrap Tabs fix pour flex layout === */
+/* Les dbc.Tabs doivent aussi fonctionner correctement dans un contexte flex */
+.nav-tabs {
+    flex-shrink: 0;
+}
+
+.tab-content {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.tab-pane {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* === Bloc d'information contextuelle Flore === */
 .flore-info-block {
     background: #f5f7fa;
     border-left: 4px solid #4caf50;
@@ -9,8 +69,8 @@
     color: #333;
     box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
-/* Styles pour l'application Dash Rapaces */
 
+/* === Styles globaux === */
 :root {
     --primary-color: #2c3e50;
     --accent-color: #e74c3c;
