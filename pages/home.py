@@ -43,13 +43,15 @@ layout = html.Div([
             "padding": "1.5rem",
             "border": "1px solid #ddd",
             "borderRadius": "8px",
+            "marginRight": "1rem",
         }),
     ], style={
         "display": "flex",
         "justifyContent": "center",
         "gap": "2rem",
-        "maxWidth": "900px",
+        "maxWidth": "1200px",
         "margin": "2rem auto",
+        "flexWrap": "wrap",
     }),
 ], style={
     "height": "100vh",

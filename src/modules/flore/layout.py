@@ -35,7 +35,7 @@ def get_flore_layout():
         # Header
         html.Div([
             html.H1("🌿 Flore Prioritaire"),
-        ], id="flore-header"),
+        ], id="header"),
 
         # Body principal
         html.Div([
@@ -52,17 +52,17 @@ def get_flore_layout():
                                 children=html.Div([
                                     html.P(
                                         "Affichage de toutes les mailles ayant des espèces prioritaires non recontactées ces 10 dernières années",
-                                        className="text-muted flore-info-block",
+                                        className="text-muted info-block",
                                     ),
                                     html.P(
                                         "Cliquez sur une maille pour voir la liste d'espèces non recontactées",
-                                        className="text-muted flore-info-block",
+                                        className="text-muted info-block",
                                     ),
                                     html.P(
                                         "Cliquez sur l'espèce dans le panneau latéral de droite pour voir les observations précises de l'espèce",
-                                        className="text-muted flore-info-block",
+                                        className="text-muted info-block",
                                     ),
-                                ], className="flore-panel-body"),
+                                ], className="panel-body, d-none d-md-block"),
                             ),
                             dbc.Tab(
                                 label="🔍 Entrée espèce",
@@ -74,34 +74,34 @@ def get_flore_layout():
                                     ),
                                     html.P(
                                         "Les mailles vertes correspondent aux mailles où l'espèce a été vue il y a moins de 10 ans, et les mailles rouges à celles où l'espèce n'a pas été vue ces 10 dernières années.",
-                                        className="text-muted flore-info-block",
+                                        className="text-muted info-block",
                                     ),
                                     html.P(
                                         "Cliquez sur une maille pour voir les observations de l'espèce en point",
-                                        className="text-muted flore-info-block",
+                                        className="text-muted info-block",
                                     ),
-                                ], className="flore-panel-body"),
+                                ], className="panel-body"),
                             ),
                         ],
                     ),
-                ], width=12, md=3, className="flore-col-panel"),
+                ], width=12, md=3, className="col-panel"),
 
                 # Carte (centrale)
                 dbc.Col(
-                    id="flore-map-col",
+                    id="map-col",
                     children=_create_map(),
                     width=12, md=6,
                 ),
 
                 # Panneau droit
                 dbc.Col(
-                    id="flore-right-panel",
+                    id="right-panel",
                     children=None,
                     width=12, md=3,
-                    className="flore-col-panel",
+                    className="col-panel p2",
                 ),
-            ], className="g-0 flore-main-row"),
-        ], id="flore-body"),
+            ], className="g-0 main-row"),
+        ], id="body"),
 
         dbc.Modal([
             dbc.ModalBody(
@@ -115,7 +115,7 @@ def get_flore_layout():
             interval=100,  # 100ms
             max_intervals=1,  # Tourne une seule fois
         ),
-    ], id="flore-app")
+    ], id="app")
 
 # --- Callback pour charger les taxons au montage de la page Flore ---
 @callback(
@@ -164,7 +164,7 @@ def flore_load_grids_geographic(active_tab):
 
 # --- Carte : mode espèce ---
 @callback(
-    Output("flore-map-col", "children"),
+    Output("map-col", "children"),
     Input("flore-grids-store", "data"),
     Input("flore-left-tabs", "active_tab"),
 )
@@ -206,7 +206,7 @@ def flore_on_grid_click_species_mode(id_area, active_tab, cd_nom, is_open):
 
 # --- Carte : mode géographique ---
 @callback(
-    Output("flore-map-col", "children", allow_duplicate=True),
+    Output("map-col", "children", allow_duplicate=True),
     Input("flore-all-grids-store", "data"),
     Input("flore-left-tabs", "active_tab"),
     prevent_initial_call=True,
@@ -250,7 +250,7 @@ def flore_on_grid_click(n_clicks):
 
 # --- Panneau droit : mode géographique ---
 @callback(
-    Output("flore-right-panel", "children", allow_duplicate=True),
+    Output("right-panel", "children", allow_duplicate=True),
     Input("current_id_area", "data"),
     Input("flore-all-grids-store", "data"),
     Input("flore-selected-species-geo-store", "data"),
@@ -282,7 +282,7 @@ def flore_update_right_panel_geographic(id_area, all_grids_data, cd_nom_geo, act
 @callback(
     Output("current_id_area", "data", allow_duplicate=True),
     Output("flore-selected-species-geo-store", "data", allow_duplicate=True),
-    Output("flore-right-panel", "children", allow_duplicate=True),
+    Output("right-panel", "children", allow_duplicate=True),
     Input("flore-left-tabs", "active_tab"),
     prevent_initial_call=True,
 )
