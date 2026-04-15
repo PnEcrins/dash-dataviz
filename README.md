@@ -46,4 +46,10 @@ Voir `assets/style.css` pour les règles CSS complètes organisées par élémen
 Le dossier `deploy` contient des exemples :
 
 - configuration apache
-- configuration systemd
+- configuration systemd (à adapter)
+
+  mkdir -p /var/log/dash-dataviz
+  chown <user>:<user> /var/log/dash-dataviz
+  systemctl daemon-reload
+  systemctl enable dash-dataviz.service
+  systemctl start dash-dataviz.service
