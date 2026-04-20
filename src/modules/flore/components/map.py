@@ -173,7 +173,7 @@ def create_obs_map(observations_geojson: Optional[Dict[str, Any]] = None, geom_4
         geom_4326: Feature GeoJSON de la maille de référence
     """
     layers = []
-    all_coords = []  # Pour calculer les bounds incluant maille + observations
+    viewport_bounds = None
     
     # Afficher la maille EN PREMIER
     if geom_4326:
@@ -182,7 +182,16 @@ def create_obs_map(observations_geojson: Optional[Dict[str, Any]] = None, geom_4
         coords = geom.get('coordinates', [])
         
         flat_coords = _flatten_coords(coords)
-        all_coords.extend(flat_coords)
+        # Zoomer UNIQUEMENT sur la maille avec une petite marge
+        if flat_coords:
+            lats = [pt[1] for pt in flat_coords]
+            lons = [pt[0] for pt in flat_coords]
+            lat_min, lat_max = min(lats), max(lats)
+            lon_min, lon_max = min(lons), max(lons)
+            
+            # Ajouter une marge pour éviter les problèmes de bounds trop serrés (~1km)
+            margin = 0.05
+            viewport_bounds = [[lat_min - margin, lon_min - margin], [lat_max + margin, lon_max + margin]]
         
         # Construire la maille comme Polygon (sinon les popup ne sont pas clickable)
         if geom_type == 'Polygon':
@@ -196,19 +205,7 @@ def create_obs_map(observations_geojson: Optional[Dict[str, Any]] = None, geom_4
     # Ajouter les observations EN DERNIER
     if observations_geojson and observations_geojson.get('features'):
         for feature in observations_geojson['features']:
-            geom = feature.get('geometry')
-            if geom:
-                flat = _flatten_coords(geom.get('coordinates', []))
-                all_coords.extend(flat)
             layers.extend(_create_obs_layers(feature))
-    
-    # Calculer les bounds pour inclure maille + observations
-    viewport_bounds = None
-    if all_coords:
-        lats = [pt[1] for pt in all_coords]
-        lons = [pt[0] for pt in all_coords]
-        if lats and lons:
-            viewport_bounds = [[min(lats), min(lons)], [max(lats), max(lons)]]
     
     return create_map(layers=layers, viewport_bounds=viewport_bounds, map_id="obs-map", height="500px")
 
@@ -252,9 +249,9 @@ def create_grid_map(grid_cells, mode: str = "tab-geographic") -> html.Div:
             id={"type": "grid-cell", "index": cell.get('id_area')},
             pane="overlayPane",
             style={
-                "color": "transparent",
-                "weight": 0,
-                "opacity": 0,
+                "color": "black",
+                "weight": 3,
+                "opacity": 1,
                 "fillColor": fill_color,
                 "fillOpacity": 0.5,
             },
