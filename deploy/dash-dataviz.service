@@ -7,17 +7,17 @@ Type=notify
 # Remplacer APP_USER par l'utilisateur réel (www-data, appuser, etc.)
 User=APP_USER
 Group=APP_USER
-WorkingDirectory=/opt/dash-rapaces
+WorkingDirectory=/opt/dash-dataviz
 
 # Activer l'environment virtuel et lancer gunicorn
-Environment="PATH=/opt/dash-rapaces/.venv/bin"
-ExecStart=/opt/dash-rapaces/.venv/bin/gunicorn \
+Environment="PATH=/opt/dash-dataviz/.venv/bin"
+ExecStart=/opt/dash-dataviz/.venv/bin/gunicorn \
     --workers 4 \
     --worker-class sync \
     --bind 127.0.0.1:8050 \
     --timeout 120 \
-    --access-logfile /var/log/dash-rapaces/access.log \
-    --error-logfile /var/log/dash-rapaces/error.log \
+    --access-logfile /var/log/dash-dataviz/access.log \
+    --error-logfile /var/log/dash-dataviz/error.log \
     --log-level info \
     app:app
 

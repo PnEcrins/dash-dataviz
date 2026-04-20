@@ -194,15 +194,15 @@ def flore_on_grid_click_species_mode(id_area, active_tab, cd_nom, is_open):
         return dash.no_update, dash.no_update
     
     
-    # Charger les observations du taxon sélectionné
-    observations = get_observations_of_cd_nom(cd_nom)
+    # Charger les observations du taxon sélectionné au format GeoJSON
+    observations_geojson = get_observations_of_cd_nom(cd_nom)
     
     # Charger la géométrie de la maille sélectionnée
     geom_4326 = None
     if id_area:
         geom_4326 = get_grid_geometry(id_area)
     
-    return not is_open, create_obs_map(observations, geom_4326=geom_4326)
+    return not is_open, create_obs_map(observations_geojson, geom_4326=geom_4326)
 
 # --- Carte : mode géographique ---
 @callback(
@@ -321,14 +321,14 @@ def flore_on_species_click_geo(n_clicks, is_open, current_id_area):
     if isinstance(trigger_id, dict) and trigger_id.get("type") == "unrecontacted-species-btn":
         cd_nom = trigger_id.get("cd_nom")
         
-        observations = get_observations_of_cd_nom(cd_nom)
+        observations_geojson = get_observations_of_cd_nom(cd_nom)
         
         # Charger la géométrie de la maille sélectionnée depuis la base de données
         geom_4326 = None
         if current_id_area:
             geom_4326 = get_grid_geometry(current_id_area)
         
-        return not is_open, create_obs_map(observations, geom_4326=geom_4326)
+        return not is_open, create_obs_map(observations_geojson, geom_4326=geom_4326)
 
     return dash.no_update, dash.no_update
 

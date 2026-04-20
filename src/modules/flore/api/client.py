@@ -84,8 +84,17 @@ def get_observations_by_grid(cd_nom: int) -> List[Dict[str, Any]]:
         return []
 
 
-def get_observations_of_cd_nom(cd_nom: int) -> List[Dict[str, Any]]:
-    """Récupère détail observations d'une maille."""
+def get_observations_of_cd_nom(cd_nom: int) -> Dict[str, Any]:
+    """Récupère les observations d'une espèce et les retourne en tant que FeatureCollection GeoJSON.
+    
+    Conserve la géométrie complète (point, ligne, polygone) pour affichage accurate.
+    
+    Args:
+        cd_nom: Code du taxon
+        
+    Returns:
+        FeatureCollection GeoJSON avec les observations
+    """
     query = """
     SELECT
         s.id_synthese,
@@ -94,8 +103,7 @@ def get_observations_of_cd_nom(cd_nom: int) -> List[Dict[str, Any]]:
         s.comment_description,
         t.nom_valide,
         t.nom_vern,
-        ST_X(ST_Centroid(s.the_geom_4326)) as lon,
-        ST_Y(ST_Centroid(s.the_geom_4326)) as lat
+        ST_AsGeoJSON(s.the_geom_4326) as geom
     FROM gn_synthese.synthese s
     JOIN taxonomie.taxref t ON s.cd_nom = t.cd_nom
     WHERE t.cd_nom = %s
@@ -107,16 +115,37 @@ def get_observations_of_cd_nom(cd_nom: int) -> List[Dict[str, Any]]:
         cur = conn.cursor(cursor_factory=RealDictCursor)
         cur.execute(query, (cd_nom,))
 
-        observations = [dict(row) for row in cur.fetchall()]
-
+        rows = cur.fetchall()
         cur.close()
         conn.close()
 
-        return observations
+        # Construire une FeatureCollection GeoJSON
+        features = []
+        for row in rows:
+            feature = {
+                "type": "Feature",
+                "geometry": json.loads(row['geom']) if isinstance(row['geom'], str) else row['geom'],
+                "properties": {
+                    "id_synthese": row['id_synthese'],
+                    "date_obs": row['date_obs'],
+                    "observers": row['observers'],
+                    "comment_description": row['comment_description'],
+                    "nom_valide": row['nom_valide'],
+                    "nom_vern": row['nom_vern'],
+                }
+            }
+            features.append(feature)
+
+        feature_collection = {
+            "type": "FeatureCollection",
+            "features": features
+        }
+
+        return feature_collection
 
     except psycopg2.Error as e:
         logger.error(f"Erreur BDD observations: {e}")
-        return []
+        return {"type": "FeatureCollection", "features": []}
 
 
 def get_all_grid_unrecontacted() -> List[Dict[str, Any]]:
