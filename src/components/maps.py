@@ -27,7 +27,7 @@ def create_map(layers=None, center=None, zoom=None, map_id="map", viewport_bound
     # Utiliser viewport avec bounds si fourni (calcule automatiquement le zoom)
     if viewport_bounds:
         map_props["center"] = center if center is not None else MAP_CENTER
-        map_props["zoom"] = 1  # Zoom minimal pour initialiser, viewport prendra le dessus
+        map_props["zoom"] = 10  # Zoom minimal pour initialiser, viewport prendra le dessus
         map_props["viewport"] = {"bounds": viewport_bounds}
     else:
         # Sans bounds, utiliser center et zoom fournis
