@@ -120,15 +120,16 @@ def create_obs_map(observations: List[Dict[str, Any]], geom_4326: Optional[Dict]
                     flat_coords.extend(ring)
         
         # Calculer les bounds simples
+        # Zoomer UNIQUEMENT sur la maille avec une petite marge
         if flat_coords:
-            try:
-                lats = [pt[1] for pt in flat_coords if len(pt) >= 2]
-                lons = [pt[0] for pt in flat_coords if len(pt) >= 2]
-                if lats and lons:
-                    # Format: [[min_lat, min_lon], [max_lat, max_lon]]
-                    viewport_bounds = [[min(lats), min(lons)], [max(lats), max(lons)]]
-            except (TypeError, IndexError):
-                pass
+            lats = [pt[1] for pt in flat_coords]
+            lons = [pt[0] for pt in flat_coords]
+            lat_min, lat_max = min(lats), max(lats)
+            lon_min, lon_max = min(lons), max(lons)
+            
+            # Ajouter une marge pour éviter les problèmes de bounds trop serrés (~1km)
+            margin = 0.05
+            viewport_bounds = [[lat_min - margin, lon_min - margin], [lat_max + margin, lon_max + margin]]
         
         # Ajouter la géométrie comme GeoJSON seulement si valide
         if geojson_data:
@@ -225,9 +226,9 @@ def create_grid_map(grid_cells, mode: str = "tab-geographic") -> html.Div:
             id={"type": "grid-cell", "index": cell.get('id_area')},
             pane="overlayPane",
             style={
-                "color": "transparent",
-                "weight": 0,
-                "opacity": 0,
+                "color": "black",
+                "weight": 3,
+                "opacity": 1,
                 "fillColor": fill_color,
                 "fillOpacity": 0.5,
             },
