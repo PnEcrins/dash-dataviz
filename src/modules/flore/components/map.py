@@ -96,118 +96,94 @@ def create_legend() -> html.Div:
     )
 
 
-def _flatten_coords(coords: Any) -> list:
-    """Extrait les coordonnées [lon, lat] d'une géométrie GeoJSON récursive."""
-    flat = []
-    if not isinstance(coords, list):
-        return flat
-    if len(coords) == 0:
-        return flat
-    if isinstance(coords[0], (int, float)):
-        return [coords] if len(coords) == 2 and all(isinstance(c, (int, float)) for c in coords) else flat
-    for item in coords:
-        flat.extend(_flatten_coords(item))
-    return flat
-
-
-def _create_popup(props: Dict[str, Any]) -> dl.Popup:
-    """Crée un popup HTML avec les infos de l'observation sur plusieurs lignes."""
-    content = html.Div([
-        html.Div(f"📅 {props.get('date_obs', '')}"),
-        html.Div(f"🔍 {props.get('nom_valide', '')}"),
-        html.Div(f"👁️ {props.get('observers', '')}"),
-    ])
-    return dl.Popup(content, className="custom-popup")
-
-
-def _create_obs_layers(feature: Dict[str, Any]) -> List[Any]:
-    """Crée des composants Leaflet selon le type de géométrie. Retourne une liste de couches."""
-    geom = feature.get('geometry')
-    if not geom:
-        return []
-    
-    geom_type = geom.get('type', '')
-    coords = geom.get('coordinates', [])
-    props = feature.get('properties', {})
-    popup = _create_popup(props)
-    layers = []
-    
-    if geom_type == 'Point':
-        lat, lon = coords[1], coords[0]
-        layers.append(dl.CircleMarker(center=(lat, lon), radius=6, color='blue', fill=True, 
-                                     fillColor='blue', fillOpacity=0.7, weight=2, children=[popup]))
-    
-    elif geom_type == 'MultiPoint':
-        for pt in coords:
-            layers.append(dl.CircleMarker(center=(pt[1], pt[0]), radius=6, color='blue', fill=True,
-                                         fillColor='blue', fillOpacity=0.7, weight=2, children=[popup]))
-    
-    elif geom_type == 'LineString':
-        layers.append(dl.Polyline(positions=[(pt[1], pt[0]) for pt in coords], color='blue', 
-                                 weight=2, children=[popup]))
-    
-    elif geom_type == 'MultiLineString':
-        for line in coords:
-            layers.append(dl.Polyline(positions=[(pt[1], pt[0]) for pt in line], color='blue', 
-                                     weight=2, children=[popup]))
-    
-    elif geom_type == 'Polygon':
-        layers.append(dl.Polygon(positions=[[(pt[1], pt[0]) for pt in ring] for ring in coords],
-                                color='blue', fill=True, fillColor='blue', fillOpacity=0.3, 
-                                weight=2, children=[popup]))
-    
-    elif geom_type == 'MultiPolygon':
-        for poly in coords:
-            layers.append(dl.Polygon(positions=[[(pt[1], pt[0]) for pt in ring] for ring in poly],
-                                    color='blue', fill=True, fillColor='blue', fillOpacity=0.3,
-                                    weight=2, children=[popup]))
-    
-    return layers
-
-
-def create_obs_map(observations_geojson: Optional[Dict[str, Any]] = None, geom_4326: Optional[Dict] = None):
-    """Affiche la maille et les observations avec leurs vraies géométries.
-    
-    Args:
-        observations_geojson: FeatureCollection GeoJSON avec les observations
-        geom_4326: Feature GeoJSON de la maille de référence
-    """
+def create_obs_map(observations: List[Dict[str, Any]], geom_4326: Optional[Dict] = None):
+    """Affiche une carte leaflet avec la maille et les observations en points."""
     layers = []
     viewport_bounds = None
     
-    # Afficher la maille EN PREMIER
+    # Afficher la maille si fournie et calculer les bounds
     if geom_4326:
-        geom = geom_4326.get('geometry', {})
-        geom_type = geom.get('type', '')
+        geojson_data = geom_4326
+        # Extraire la géométrie et les coordonnées
+        geom = geojson_data.get('geometry', {})
         coords = geom.get('coordinates', [])
+        geom_type = geom.get('type')
+        flat_coords = []
         
-        flat_coords = _flatten_coords(coords)
-        # Zoomer UNIQUEMENT sur la maille avec une petite marge
-        if flat_coords:
-            lats = [pt[1] for pt in flat_coords]
-            lons = [pt[0] for pt in flat_coords]
-            lat_min, lat_max = min(lats), max(lats)
-            lon_min, lon_max = min(lons), max(lons)
-            
-            # Ajouter une marge pour éviter les problèmes de bounds trop serrés (~1km)
-            margin = 0.05
-            viewport_bounds = [[lat_min - margin, lon_min - margin], [lat_max + margin, lon_max + margin]]
-        
-        # Construire la maille comme Polygon (sinon les popup ne sont pas clickable)
+        # Extraire les coordonnées selon le type
         if geom_type == 'Polygon':
-            layers.append(dl.Polygon(positions=[[(pt[1], pt[0]) for pt in ring] for ring in coords],
-                                    color='black', fill=False, weight=2))
+            for ring in coords:
+                flat_coords.extend(ring)
         elif geom_type == 'MultiPolygon':
             for poly in coords:
-                layers.append(dl.Polygon(positions=[[(pt[1], pt[0]) for pt in ring] for ring in poly],
-                                        color='black', fill=False, weight=2))
+                for ring in poly:
+                    flat_coords.extend(ring)
+        
+        # Calculer les bounds simples
+        if flat_coords:
+            try:
+                lats = [pt[1] for pt in flat_coords if len(pt) >= 2]
+                lons = [pt[0] for pt in flat_coords if len(pt) >= 2]
+                if lats and lons:
+                    # Format: [[min_lat, min_lon], [max_lat, max_lon]]
+                    viewport_bounds = [[min(lats), min(lons)], [max(lats), max(lons)]]
+            except (TypeError, IndexError):
+                pass
+        
+        # Ajouter la géométrie comme GeoJSON seulement si valide
+        if geojson_data:
+            layers.append(
+                dl.GeoJSON(
+                    data=geojson_data,
+                    style={
+                        "color": "black",
+                        "weight": 2,
+                        "fillColor": "transparent",
+                        "fillOpacity": 0.0,
+                    },
+                    pane="overlayPane",
+                )
+            )
+
+
+    # Ajoute les observations
+    if observations:
+        for obs in observations:
+            if obs.get('lon') and obs.get('lat'):
+                date_obs = obs.get('date_obs', '')
+                nom = obs.get('nom_valide', '')
+                layers.append(
+                    dl.CircleMarker(
+                        center=[obs['lat'], obs['lon']],
+                        radius=5,
+                        color="blue",
+                        fill=True,
+                        fillOpacity=0.7,
+                        pane="markerPane",
+                        children=[
+                            dl.Popup(
+                                children=[
+                                    html.Div([
+                                        html.Small(f"📅 {date_obs}", style={"display": "block"}),
+                                        html.Small(f"🔍 {nom}", style={"display": "block", "marginTop": "5px"}),
+                                        html.Small(f" Observateur : {obs.get('observers')} ", style={"display": "block", "marginTop": "5px"}),
+                                    ])
+                                ],
+                                closeButton=True,
+                                autoClose=False,
+                            )
+                        ],
+                        n_clicks=0,
+                    )
+                )
     
-    # Ajouter les observations EN DERNIER
-    if observations_geojson and observations_geojson.get('features'):
-        for feature in observations_geojson['features']:
-            layers.extend(_create_obs_layers(feature))
-    
-    return create_map(layers=layers, viewport_bounds=viewport_bounds, map_id="obs-map", height="500px")
+    # Utiliser la nouvelle fonction create_map avec les bounds
+    return create_map(
+        layers=layers,
+        viewport_bounds=viewport_bounds,
+        map_id="obs-map",
+        height="500px"
+    )
 
 def create_grid_map(grid_cells, mode: str = "tab-geographic") -> html.Div:
     """Crée la carte des mailles 1km Dict[str, Any]], mode: str = "tab-geographic") -> html.Div:
@@ -249,9 +225,9 @@ def create_grid_map(grid_cells, mode: str = "tab-geographic") -> html.Div:
             id={"type": "grid-cell", "index": cell.get('id_area')},
             pane="overlayPane",
             style={
-                "color": "black",
-                "weight": 3,
-                "opacity": 1,
+                "color": "transparent",
+                "weight": 0,
+                "opacity": 0,
                 "fillColor": fill_color,
                 "fillOpacity": 0.5,
             },
