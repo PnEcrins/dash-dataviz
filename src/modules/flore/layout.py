@@ -104,9 +104,22 @@ def get_flore_layout():
         ], id="body"),
 
         dbc.Modal([
-            dbc.ModalBody(
-                html.Div(id="modal-map-container")  # Carte des observation pour un cd_nom
-            )
+            dbc.ModalBody([
+                 # Carte des observation pour un cd_nom
+                html.Div(
+                    id="modal-map-container",
+                    style={
+                        "marginBottom": "10px",
+                    }),
+                dbc.Alert(
+                    html.Small(
+                    "⚠️ Les observations sont représentées par leur centroid. Si l'observation était un grand polygone, il se peut qu'elle ne soit pas exactement dans la maille sélectionnée", 
+                    style={"font-size": "0.7rem"}
+                    ),
+                    color="info",
+                ),
+            
+        ])
         ], id="modal", is_open=False),
 
         # Interval pour charger les taxons une seule fois au montage
