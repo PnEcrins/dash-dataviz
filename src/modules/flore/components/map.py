@@ -153,11 +153,12 @@ def create_obs_map(observations: List[Dict[str, Any]], geom_4326: Optional[Dict]
             if obs.get('lon') and obs.get('lat'):
                 date_obs = obs.get('date_obs', '')
                 nom = obs.get('nom_valide', '')
+                color = "blue" if obs["geom_type"] == "ST_Point" else "red"
                 layers.append(
                     dl.CircleMarker(
                         center=[obs['lat'], obs['lon']],
                         radius=5,
-                        color="blue",
+                        color=color,
                         fill=True,
                         fillOpacity=0.7,
                         pane="markerPane",

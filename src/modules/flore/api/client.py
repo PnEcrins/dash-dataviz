@@ -94,8 +94,9 @@ def get_observations_of_cd_nom(cd_nom: int) -> List[Dict[str, Any]]:
         s.comment_description,
         t.nom_valide,
         t.nom_vern,
-        ST_X(ST_Centroid(s.the_geom_4326)) as lon,
-        ST_Y(ST_Centroid(s.the_geom_4326)) as lat
+        ST_X(s.the_geom_point) as lon,
+        ST_Y(s.the_geom_point) as lat,
+        ST_GeometryType(s.the_geom_4326) as geom_type
     FROM gn_synthese.synthese s
     JOIN taxonomie.taxref t ON s.cd_nom = t.cd_nom
     WHERE t.cd_nom = %s

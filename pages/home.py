@@ -11,23 +11,23 @@ layout = html.Div([
     ], style={"padding": "2rem", "textAlign": "center"}),
     
     html.Div([
-        html.Div([
-            html.H3("🦅 Module Aigle"),
-            html.P("Suivi géospatial et temporel des aigles"),
-            dcc.Link("Accéder au module →", href=get_page_path('/aigle'), style={
-                "display": "inline-block",
-                "padding": "0.5rem 1rem",
-                "backgroundColor": "#007bff",
-                "color": "white",
-                "textDecoration": "none",
-                "borderRadius": "4px",
-            }),
-        ], style={
-            "padding": "1.5rem",
-            "border": "1px solid #ddd",
-            "borderRadius": "8px",
-            "marginRight": "1rem",
-        }),
+        # html.Div([
+        #     html.H3("🦅 Module Aigle"),
+        #     html.P("Suivi géospatial et temporel des aigles"),
+        #     dcc.Link("Accéder au module →", href=get_page_path('/aigle'), style={
+        #         "display": "inline-block",
+        #         "padding": "0.5rem 1rem",
+        #         "backgroundColor": "#007bff",
+        #         "color": "white",
+        #         "textDecoration": "none",
+        #         "borderRadius": "4px",
+        #     }),
+        # ], style={
+        #     "padding": "1.5rem",
+        #     "border": "1px solid #ddd",
+        #     "borderRadius": "8px",
+        #     "marginRight": "1rem",
+        # }),
         html.Div([
             html.H3("🌿 Module Flore"),
             html.P("Suivi de la flore"),

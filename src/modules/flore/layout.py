@@ -17,7 +17,7 @@ from src.modules.flore.components.taxon_selector import create_taxon_selector
 from src.modules.flore.components.map import create_grid_map, create_obs_map
 from src.modules.flore.components.map import _create_map
 from src.modules.flore.components.unrecontacted_species_panel import create_unrecontacted_species_panel, create_empty_endangered_species_panel
-
+from src.modules.flore.components.obs_modal import base_modal_component
 
 logger = logging.getLogger(__name__)
 
@@ -103,24 +103,7 @@ def get_flore_layout():
             ], className="g-0 main-row"),
         ], id="body"),
 
-        dbc.Modal([
-            dbc.ModalBody([
-                 # Carte des observation pour un cd_nom
-                html.Div(
-                    id="modal-map-container",
-                    style={
-                        "marginBottom": "10px",
-                    }),
-                dbc.Alert(
-                    html.Small(
-                    "⚠️ Les observations sont représentées par leur centroid. Si l'observation était un grand polygone, il se peut qu'elle ne soit pas exactement dans la maille sélectionnée", 
-                    style={"font-size": "0.7rem"}
-                    ),
-                    color="info",
-                ),
-            
-        ])
-        ], id="modal", is_open=False),
+        base_modal_component(),
 
         # Interval pour charger les taxons une seule fois au montage
         dcc.Interval(
