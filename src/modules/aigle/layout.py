@@ -1,4 +1,5 @@
 """Layout principal du module Aigle."""
+
 import logging
 from dash import html, dcc, callback, Input, Output, ALL, ctx
 import dash_bootstrap_components as dbc
@@ -10,7 +11,10 @@ from src.modules.aigle.components.map import create_map_component
 from src.modules.aigle.components.list import create_sites_list, create_empty_list
 from src.components.maps import create_map
 
-from src.modules.aigle.components.visits_panel import create_visits_panel, create_empty_visits_panel
+from src.modules.aigle.components.visits_panel import (
+    create_visits_panel,
+    create_empty_visits_panel,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -24,27 +28,33 @@ def get_aigle_layout():
             dcc.Store(id="aigle-visits-data-store", data=None),
             dcc.Store(id="aigle-years-list-store", data=None),
             dcc.Store(id="aigle-selected-site-store", data=None),
-            
             # Interval pour charger les données une seule fois au montage
             dcc.Interval(
                 id="aigle-init-interval",
                 interval=100,  # 100ms
                 max_intervals=1,  # Tourne une seule fois
             ),
-
             # Header
             html.Div(
                 [
                     html.Div(
                         [
-                            html.H1("🦅 Suivi des Aires d'Aigle", style={"margin": "0"}),
-                            html.P("Visualisation interactive des données du protocole de reproduction", style={"margin": "0"}),
+                            html.H1(
+                                "🦅 Suivi des Aires d'Aigle", style={"margin": "0"}
+                            ),
+                            html.P(
+                                "Visualisation interactive des données du protocole de reproduction",
+                                style={"margin": "0"},
+                            ),
                         ],
                         style={"flex": "1"},
                     ),
                     html.Div(
                         [
-                            html.Label("Année:", style={"marginRight": "10px", "fontWeight": "500"}),
+                            html.Label(
+                                "Année:",
+                                style={"marginRight": "10px", "fontWeight": "500"},
+                            ),
                             dcc.Dropdown(
                                 id="aigle-year-selector",
                                 options=[],
@@ -66,7 +76,6 @@ def get_aigle_layout():
                     "flexShrink": "0",
                 },
             ),
-
             # Layout principal
             html.Div(
                 [
@@ -101,7 +110,13 @@ def get_aigle_layout():
                 style={"display": "flex", "gap": "0", "flex": "1", "minHeight": "0"},
             ),
         ],
-        style={"height": "100vh", "display": "flex", "flexDirection": "column", "margin": "0", "padding": "0"},
+        style={
+            "height": "100vh",
+            "display": "flex",
+            "flexDirection": "column",
+            "margin": "0",
+            "padding": "0",
+        },
     )
 
 

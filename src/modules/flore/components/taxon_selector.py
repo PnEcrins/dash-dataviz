@@ -1,4 +1,5 @@
 """Composant sélecteur taxon - Module Flore."""
+
 from typing import List, Dict, Any
 from dash import html, dcc
 
@@ -13,7 +14,10 @@ def create_taxon_selector(taxa: List[Dict[str, Any]]) -> html.Div:
         Composant div avec dropdown searchable
     """
     options = [
-        {"label": f"{t['nom_valide']} ({t.get('nom_vern') or t.get('lb_nom')})", "value": t['cd_nom']}
+        {
+            "label": f"{t['nom_valide']} ({t.get('nom_vern') or t.get('lb_nom')})",
+            "value": t["cd_nom"],
+        }
         for t in taxa
     ]
 
@@ -32,7 +36,6 @@ def create_taxon_selector(taxa: List[Dict[str, Any]]) -> html.Div:
                 style={"width": "100%"},
             ),
             html.Hr(),
-
         ],
         style={
             "height": "100%",

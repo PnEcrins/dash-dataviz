@@ -1,10 +1,13 @@
 """Composant liste des aires - Module Aigle."""
+
 from typing import List, Optional, Dict, Any
 from dash import html, dcc, callback, Input, Output
 import dash_bootstrap_components as dbc
 
 
-def create_sites_list(sites: List[Dict[str, Any]], selected_site_id: Optional[int] = None) -> html.Div:
+def create_sites_list(
+    sites: List[Dict[str, Any]], selected_site_id: Optional[int] = None
+) -> html.Div:
     """Crée la liste complète des aires.
 
     Args:
@@ -17,14 +20,14 @@ def create_sites_list(sites: List[Dict[str, Any]], selected_site_id: Optional[in
 
     list_items = []
     for site in sites:
-        site_id = site.get('id_base_site')
+        site_id = site.get("id_base_site")
         is_selected = site_id == selected_site_id
 
         item = dbc.ListGroupItem(
             [
                 html.Div(
                     [
-                        html.H6(site.get('base_site_name'), className="mb-0"),
+                        html.H6(site.get("base_site_name"), className="mb-0"),
                         html.Small(
                             f"Code: {site.get('base_site_code')}",
                             className="text-muted",

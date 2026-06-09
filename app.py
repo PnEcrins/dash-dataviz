@@ -1,4 +1,5 @@
 """Application Dash principale - Multi-page avec Dash Pages."""
+
 import logging
 from dash import html
 import dash
@@ -14,14 +15,12 @@ app = dash.Dash(
     __name__,
     use_pages=True,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
-    requests_pathname_prefix=config.URL_PREFIX
+    requests_pathname_prefix=config.URL_PREFIX,
 )
 
-app.layout = html.Div(
-    dash.page_container,
-    style={"margin": "0", "padding": "0"}
-)
+app.layout = html.Div(dash.page_container, style={"margin": "0", "padding": "0"})
 
 if __name__ == "__main__":
     import config
+
     app.run(debug=config.DEBUG, host=config.HOST, port=config.PORT)

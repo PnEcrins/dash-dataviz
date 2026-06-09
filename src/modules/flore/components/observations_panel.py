@@ -1,4 +1,5 @@
 """Composant liste observations maille - Module Flore."""
+
 from typing import List, Optional, Dict, Any
 from dash import html
 import dash_bootstrap_components as dbc
@@ -29,7 +30,7 @@ def create_observations_panel(
                     [
                         html.Div(
                             [
-                                html.Strong(obs.get('date_obs')),
+                                html.Strong(obs.get("date_obs")),
                                 html.Br(),
                                 html.Small(
                                     f"{obs.get('nom_valide')} ({obs.get('nom_vern') or 'N/A'})",
@@ -41,10 +42,15 @@ def create_observations_panel(
                                 ),
                             ]
                         ),
-                        html.Hr() if obs.get('comment_description') else None,
-                        html.Small(obs.get('comment_description'), className="d-block text-muted")
-                        if obs.get('comment_description')
-                        else None,
+                        html.Hr() if obs.get("comment_description") else None,
+                        (
+                            html.Small(
+                                obs.get("comment_description"),
+                                className="d-block text-muted",
+                            )
+                            if obs.get("comment_description")
+                            else None
+                        ),
                     ],
                     style={"padding": "10px"},
                 )
@@ -56,11 +62,18 @@ def create_observations_panel(
     return html.Div(
         [
             html.H5("Observations", className="mb-2"),
-            html.P(f"{grid_name} - {len(observations)} obs", className="small text-muted mb-3"),
+            html.P(
+                f"{grid_name} - {len(observations)} obs",
+                className="small text-muted mb-3",
+            ),
             html.Div(
-                obs_cards if obs_cards else html.P(
-                    "Aucune observation",
-                    className="text-muted",
+                (
+                    obs_cards
+                    if obs_cards
+                    else html.P(
+                        "Aucune observation",
+                        className="text-muted",
+                    )
                 ),
                 id="flore-observations-list",
                 style={

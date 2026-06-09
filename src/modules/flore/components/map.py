@@ -1,4 +1,7 @@
 """Composant carte mailles 1km - Module Flore."""
+
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from typing import List, Dict, Any, Optional
 import json
 import dash_leaflet as dl
@@ -7,14 +10,21 @@ from src.components.maps import create_map
 from config import MAP_CENTER, MAP_ZOOM
 
 
-def _create_map(layers=None, center=None, zoom=None, map_id="map", viewport_bounds=None, height="100%"):
+def _create_map(
+    layers=None,
+    center=None,
+    zoom=None,
+    map_id="map",
+    viewport_bounds=None,
+    height="100%",
+):
     return create_map(
         layers=layers,
         center=center,
         zoom=zoom,
         map_id=map_id,
         viewport_bounds=viewport_bounds,
-        height=height
+        height=height,
     )
 
 
@@ -41,46 +51,57 @@ def create_legend() -> html.Div:
     """Crée une légende pour la carte."""
     return html.Div(
         [
-            html.P("Nombre d'espèce(s) non recontactée(s) ces 10 dernières années", style={"marginBottom": "10px", "fontWeight": "bold", "width": "70px"}),
-            html.Div([
-                html.Div(
-                    style={
-                        "width": "20px",
-                        "height": "20px",
-                        "backgroundColor": "#FFFF00",
-                        "opacity": 0.5,
-                        "display": "inline-block",
-                        "marginRight": "8px",
-                    }
-                ),
-                html.Span("1", style={"fontSize": "12px"}),
-            ], style={"marginBottom": "5px"}),
-            html.Div([
-                html.Div(
-                    style={
-                        "width": "20px",
-                        "height": "20px",
-                        "backgroundColor": "#FFA500",
-                        "opacity": 0.5,
-                        "display": "inline-block",
-                        "marginRight": "8px",
-                    }
-                ),
-                html.Span("2", style={"fontSize": "12px"}),
-            ], style={"marginBottom": "5px"}),
-            html.Div([
-                html.Div(
-                    style={
-                        "width": "20px",
-                        "height": "20px",
-                        "backgroundColor": "#FF0000",
-                        "opacity": 0.5,
-                        "display": "inline-block",
-                        "marginRight": "8px",
-                    }
-                ),
-                html.Span("3+", style={"fontSize": "12px"}),
-            ]),
+            html.P(
+                "Nombre d'espèce(s) non recontactée(s) ces 10 dernières années",
+                style={"marginBottom": "10px", "fontWeight": "bold", "width": "70px"},
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        style={
+                            "width": "20px",
+                            "height": "20px",
+                            "backgroundColor": "#FFFF00",
+                            "opacity": 0.5,
+                            "display": "inline-block",
+                            "marginRight": "8px",
+                        }
+                    ),
+                    html.Span("1", style={"fontSize": "12px"}),
+                ],
+                style={"marginBottom": "5px"},
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        style={
+                            "width": "20px",
+                            "height": "20px",
+                            "backgroundColor": "#FFA500",
+                            "opacity": 0.5,
+                            "display": "inline-block",
+                            "marginRight": "8px",
+                        }
+                    ),
+                    html.Span("2", style={"fontSize": "12px"}),
+                ],
+                style={"marginBottom": "5px"},
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        style={
+                            "width": "20px",
+                            "height": "20px",
+                            "backgroundColor": "#FF0000",
+                            "opacity": 0.5,
+                            "display": "inline-block",
+                            "marginRight": "8px",
+                        }
+                    ),
+                    html.Span("3+", style={"fontSize": "12px"}),
+                ]
+            ),
         ],
         style={
             "position": "absolute",
@@ -96,29 +117,31 @@ def create_legend() -> html.Div:
     )
 
 
-def create_obs_map(observations: List[Dict[str, Any]], geom_4326: Optional[Dict] = None):
+def create_obs_map(
+    observations: List[Dict[str, Any]], geom_4326: Optional[Dict] = None
+):
     """Affiche une carte leaflet avec la maille et les observations en points."""
     layers = []
     viewport_bounds = None
-    
+
     # Afficher la maille si fournie et calculer les bounds
     if geom_4326:
         geojson_data = geom_4326
         # Extraire la géométrie et les coordonnées
-        geom = geojson_data.get('geometry', {})
-        coords = geom.get('coordinates', [])
-        geom_type = geom.get('type')
+        geom = geojson_data.get("geometry", {})
+        coords = geom.get("coordinates", [])
+        geom_type = geom.get("type")
         flat_coords = []
-        
+
         # Extraire les coordonnées selon le type
-        if geom_type == 'Polygon':
+        if geom_type == "Polygon":
             for ring in coords:
                 flat_coords.extend(ring)
-        elif geom_type == 'MultiPolygon':
+        elif geom_type == "MultiPolygon":
             for poly in coords:
                 for ring in poly:
                     flat_coords.extend(ring)
-        
+
         # Calculer les bounds simples
         # Zoomer UNIQUEMENT sur la maille avec une petite marge
         if flat_coords:
@@ -126,11 +149,14 @@ def create_obs_map(observations: List[Dict[str, Any]], geom_4326: Optional[Dict]
             lons = [pt[0] for pt in flat_coords]
             lat_min, lat_max = min(lats), max(lats)
             lon_min, lon_max = min(lons), max(lons)
-            
+
             # Ajouter une marge pour éviter les problèmes de bounds trop serrés (~1km)
             margin = 0.05
-            viewport_bounds = [[lat_min - margin, lon_min - margin], [lat_max + margin, lon_max + margin]]
-        
+            viewport_bounds = [
+                [lat_min - margin, lon_min - margin],
+                [lat_max + margin, lon_max + margin],
+            ]
+
         # Ajouter la géométrie comme GeoJSON seulement si valide
         if geojson_data:
             layers.append(
@@ -146,30 +172,56 @@ def create_obs_map(observations: List[Dict[str, Any]], geom_4326: Optional[Dict]
                 )
             )
 
-
     # Ajoute les observations
     if observations:
         for obs in observations:
-            if obs.get('lon') and obs.get('lat'):
-                date_obs = obs.get('date_obs', '')
-                nom = obs.get('nom_valide', '')
-                color = "blue" if obs["geom_type"] == "ST_Point" else "red"
+            if obs.get("lon") and obs.get("lat"):
+                date_obs = obs.get("date_obs", "")
+                nom = obs.get("nom_valide", "")
+                # Par défaut rouge (ancienne observation)
+                color = "red"
+                parsed = datetime.strptime(date_obs, "%Y-%m-%d").date()
+                today = datetime.now().date()
+                rd = relativedelta(today, parsed)
+                # bleu si l'observation est dans les 10 dernières années, rouge sinon
+                color = "blue" if rd.years < 10 else "red"
+                point = obs["geom_type"] == "ST_Point"
                 layers.append(
                     dl.CircleMarker(
-                        center=[obs['lat'], obs['lon']],
+                        center=[obs["lat"], obs["lon"]],
                         radius=5,
-                        color=color,
+                        color="black",  # contour
+                        weight=1 if point else 5,  # epaisseur du contour
+                        fillColor=color,  # couleur interieur
+                        fillOpacity=1,  # opacité interieur
+                        # fillOpacity=1.0,
                         fill=True,
-                        fillOpacity=0.7,
                         pane="markerPane",
                         children=[
                             dl.Popup(
                                 children=[
-                                    html.Div([
-                                        html.Small(f"📅 {date_obs}", style={"display": "block"}),
-                                        html.Small(f"🔍 {nom}", style={"display": "block", "marginTop": "5px"}),
-                                        html.Small(f" Observateur : {obs.get('observers')} ", style={"display": "block", "marginTop": "5px"}),
-                                    ])
+                                    html.Div(
+                                        [
+                                            html.Small(
+                                                f"📅 {date_obs}",
+                                                style={"display": "block"},
+                                            ),
+                                            html.Small(
+                                                f"🔍 {nom}",
+                                                style={
+                                                    "display": "block",
+                                                    "marginTop": "5px",
+                                                },
+                                            ),
+                                            html.Small(
+                                                f" Observateur : {obs.get('observers')} ",
+                                                style={
+                                                    "display": "block",
+                                                    "marginTop": "5px",
+                                                },
+                                            ),
+                                        ]
+                                    )
                                 ],
                                 closeButton=True,
                                 autoClose=False,
@@ -178,14 +230,12 @@ def create_obs_map(observations: List[Dict[str, Any]], geom_4326: Optional[Dict]
                         n_clicks=0,
                     )
                 )
-    
+
     # Utiliser la nouvelle fonction create_map avec les bounds
     return create_map(
-        layers=layers,
-        viewport_bounds=viewport_bounds,
-        map_id="obs-map",
-        height="500px"
+        layers=layers, viewport_bounds=viewport_bounds, map_id="obs-map", height="500px"
     )
+
 
 def create_grid_map(grid_cells, mode: str = "tab-geographic") -> html.Div:
     """Crée la carte des mailles 1km Dict[str, Any]], mode: str = "tab-geographic") -> html.Div:
@@ -200,31 +250,37 @@ def create_grid_map(grid_cells, mode: str = "tab-geographic") -> html.Div:
     # Créer les polygones pour chaque maille EN PREMIER (elles seront en arrière)
     layers = []
     for cell in grid_cells:
-        if not cell.get('geom_4326'):
+        if not cell.get("geom_4326"):
             continue
         try:
-            geom = json.loads(cell['geom_4326']) if isinstance(cell['geom_4326'], str) else cell['geom_4326']
+            geom = (
+                json.loads(cell["geom_4326"])
+                if isinstance(cell["geom_4326"], str)
+                else cell["geom_4326"]
+            )
         except json.JSONDecodeError:
             continue
         # Déterminer la couleur selon le mode
         if mode == "tab-species":
-            fill_color = cell.get('color') if cell.get('color') else "#F0F0F0"
+            fill_color = cell.get("color") if cell.get("color") else "#F0F0F0"
         else:
-            fill_color = get_grid_color(cell.get('nb_unrecontacted_species_species', 0))
+            fill_color = get_grid_color(cell.get("nb_unrecontacted_species_species", 0))
         feature = {
             "type": "Feature",
             "properties": {
-                "id": cell.get('id_area'),
-                "name": cell.get('area_name'),
-                "nb_obs": cell.get('nb_observations', 0),
-                "nb_unrecontacted_species": cell.get('nb_unrecontacted_species_species', 0),
-                "last_date": cell.get('last_observation_date') or "N/A",
+                "id": cell.get("id_area"),
+                "name": cell.get("area_name"),
+                "nb_obs": cell.get("nb_observations", 0),
+                "nb_unrecontacted_species": cell.get(
+                    "nb_unrecontacted_species_species", 0
+                ),
+                "last_date": cell.get("last_observation_date") or "N/A",
             },
             "geometry": geom,
         }
         geojson_layer = dl.GeoJSON(
             data=feature,
-            id={"type": "grid-cell", "index": cell.get('id_area')},
+            id={"type": "grid-cell", "index": cell.get("id_area")},
             pane="overlayPane",
             style={
                 "color": "black",
@@ -242,8 +298,6 @@ def create_grid_map(grid_cells, mode: str = "tab-geographic") -> html.Div:
         )
         layers.append(geojson_layer)
 
-
-
     # Utiliser la nouvelle fonction create_map
     map_component = _create_map(
         layers=layers,
@@ -252,11 +306,17 @@ def create_grid_map(grid_cells, mode: str = "tab-geographic") -> html.Div:
     )
     # Ajouter la légende si nécessaire
     if mode == "tab-geographic":
-        return html.Div([
-            map_component,
-            create_legend(),
-        ], style={"width": "100%", "height": "100%", "position": "relative"})
+        return html.Div(
+            [
+                map_component,
+                create_legend(),
+            ],
+            style={"width": "100%", "height": "100%", "position": "relative"},
+        )
     else:
-        return html.Div([
-            map_component,
-        ], style={"width": "100%", "height": "100%", "position": "relative"})
+        return html.Div(
+            [
+                map_component,
+            ],
+            style={"width": "100%", "height": "100%", "position": "relative"},
+        )

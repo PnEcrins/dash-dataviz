@@ -1,4 +1,5 @@
 """Layout principal du module Flore."""
+
 import logging
 from dash import html, dcc, callback, Input, Output, State, ctx, ALL
 from dash.exceptions import PreventUpdate
@@ -16,7 +17,10 @@ from src.modules.flore.api.client import (
 from src.modules.flore.components.taxon_selector import create_taxon_selector
 from src.modules.flore.components.map import create_grid_map, create_obs_map
 from src.modules.flore.components.map import _create_map
-from src.modules.flore.components.unrecontacted_species_panel import create_unrecontacted_species_panel, create_empty_endangered_species_panel
+from src.modules.flore.components.unrecontacted_species_panel import (
+    create_unrecontacted_species_panel,
+    create_empty_endangered_species_panel,
+)
 from src.modules.flore.components.obs_modal import base_modal_component
 
 logger = logging.getLogger(__name__)
@@ -24,94 +28,116 @@ logger = logging.getLogger(__name__)
 
 def get_flore_layout():
     """Retourne le layout du module Flore."""
-    return html.Div([
-        # Stores
-        dcc.Store(id="flore-grids-store", data=None),
-        dcc.Store(id="flore-all-grids-store", data=None),
-        dcc.Store(id="current_id_area", data=None),
-        dcc.Store(id="current-selected-taxon-store", data=None),
-        dcc.Store(id="flore-selected-species-geo-store", data=None),
-
-        # Header
-        html.Div([
-            html.H1("🌿 Flore Prioritaire"),
-        ], id="header"),
-
-        # Body principal
-        html.Div([
-            dbc.Row([
-                # Colonne gauche (tabs)
-                dbc.Col([
-                    dbc.Tabs(
-                        id="flore-left-tabs",
-                        active_tab="tab-geographic",
-                        children=[
-                            dbc.Tab(
-                                label="🗺️ Entrée géographique",
-                                tab_id="tab-geographic",
-                                children=html.Div([
-                                    html.P(
-                                        "Affichage de toutes les mailles ayant des espèces prioritaires non recontactées ces 10 dernières années",
-                                        className="text-muted info-block",
+    return html.Div(
+        [
+            # Stores
+            dcc.Store(id="flore-grids-store", data=None),
+            dcc.Store(id="flore-all-grids-store", data=None),
+            dcc.Store(id="current_id_area", data=None),
+            dcc.Store(id="current-selected-taxon-store", data=None),
+            dcc.Store(id="flore-selected-species-geo-store", data=None),
+            # Header
+            html.Div(
+                [
+                    html.H1("🌿 Flore Prioritaire"),
+                ],
+                id="header",
+            ),
+            # Body principal
+            html.Div(
+                [
+                    dbc.Row(
+                        [
+                            # Colonne gauche (tabs)
+                            dbc.Col(
+                                [
+                                    dbc.Tabs(
+                                        id="flore-left-tabs",
+                                        active_tab="tab-geographic",
+                                        children=[
+                                            dbc.Tab(
+                                                label="🗺️ Entrée géographique",
+                                                tab_id="tab-geographic",
+                                                children=html.Div(
+                                                    [
+                                                        html.P(
+                                                            "Affichage de toutes les mailles ayant des espèces prioritaires non recontactées ces 10 dernières années",
+                                                            className="text-muted info-block",
+                                                        ),
+                                                        html.P(
+                                                            "Cliquez sur une maille pour voir la liste d'espèces non recontactées",
+                                                            className="text-muted info-block",
+                                                        ),
+                                                        html.P(
+                                                            "Cliquez sur l'espèce dans le panneau latéral de droite pour voir les observations précises de l'espèce",
+                                                            className="text-muted info-block",
+                                                        ),
+                                                    ],
+                                                    className="panel-body, d-none d-md-block",
+                                                ),
+                                            ),
+                                            dbc.Tab(
+                                                label="🔍 Entrée espèce",
+                                                tab_id="tab-species",
+                                                children=html.Div(
+                                                    [
+                                                        html.Div(
+                                                            id="flore-selector-container",
+                                                            children=create_taxon_selector(
+                                                                []
+                                                            ),
+                                                        ),
+                                                        html.P(
+                                                            "Les mailles vertes correspondent aux mailles où l'espèce a été vue il y a moins de 10 ans, et les mailles rouges à celles où l'espèce n'a pas été vue ces 10 dernières années.",
+                                                            className="text-muted info-block",
+                                                        ),
+                                                        html.P(
+                                                            "Cliquez sur une maille pour voir les observations de l'espèce en point",
+                                                            className="text-muted info-block",
+                                                        ),
+                                                    ],
+                                                    className="panel-body",
+                                                ),
+                                            ),
+                                        ],
                                     ),
-                                    html.P(
-                                        "Cliquez sur une maille pour voir la liste d'espèces non recontactées",
-                                        className="text-muted info-block",
-                                    ),
-                                    html.P(
-                                        "Cliquez sur l'espèce dans le panneau latéral de droite pour voir les observations précises de l'espèce",
-                                        className="text-muted info-block",
-                                    ),
-                                ], className="panel-body, d-none d-md-block"),
+                                ],
+                                width=12,
+                                md=3,
+                                className="col-panel",
                             ),
-                            dbc.Tab(
-                                label="🔍 Entrée espèce",
-                                tab_id="tab-species",
-                                children=html.Div([
-                                    html.Div(
-                                        id="flore-selector-container",
-                                        children=create_taxon_selector([]),
-                                    ),
-                                    html.P(
-                                        "Les mailles vertes correspondent aux mailles où l'espèce a été vue il y a moins de 10 ans, et les mailles rouges à celles où l'espèce n'a pas été vue ces 10 dernières années.",
-                                        className="text-muted info-block",
-                                    ),
-                                    html.P(
-                                        "Cliquez sur une maille pour voir les observations de l'espèce en point",
-                                        className="text-muted info-block",
-                                    ),
-                                ], className="panel-body"),
+                            # Carte (centrale)
+                            dbc.Col(
+                                id="map-col",
+                                children=_create_map(),
+                                width=12,
+                                md=6,
+                            ),
+                            # Panneau droit
+                            dbc.Col(
+                                id="right-panel",
+                                children=None,
+                                width=12,
+                                md=3,
+                                className="col-panel p2",
                             ),
                         ],
+                        className="g-0 main-row",
                     ),
-                ], width=12, md=3, className="col-panel"),
+                ],
+                id="body",
+            ),
+            base_modal_component(),
+            # Interval pour charger les taxons une seule fois au montage
+            dcc.Interval(
+                id="flore-init-interval",
+                interval=100,  # 100ms
+                max_intervals=1,  # Tourne une seule fois
+            ),
+        ],
+        id="app",
+    )
 
-                # Carte (centrale)
-                dbc.Col(
-                    id="map-col",
-                    children=_create_map(),
-                    width=12, md=6,
-                ),
-
-                # Panneau droit
-                dbc.Col(
-                    id="right-panel",
-                    children=None,
-                    width=12, md=3,
-                    className="col-panel p2",
-                ),
-            ], className="g-0 main-row"),
-        ], id="body"),
-
-        base_modal_component(),
-
-        # Interval pour charger les taxons une seule fois au montage
-        dcc.Interval(
-            id="flore-init-interval",
-            interval=100,  # 100ms
-            max_intervals=1,  # Tourne une seule fois
-        ),
-    ], id="app")
 
 # --- Callback pour charger les taxons au montage de la page Flore ---
 @callback(
@@ -141,6 +167,7 @@ def flore_load_grids_species(cd_nom, active_tab):
         logger.warning(f"Aucune maille trouvée pour taxon {cd_nom}")
         return None
     return grid_cells
+
 
 # --- Mode géographique : charger toutes les grilles en danger ---
 @callback(
@@ -172,6 +199,7 @@ def flore_update_map_species(grids_data, active_tab):
         return _create_map()
     return create_grid_map(grids_data, "tab-species")
 
+
 # --- Mode espèce : quand on clique sur une maille, affiche les observations dans la modale ---
 @callback(
     Output("modal", "is_open", allow_duplicate=True),
@@ -188,17 +216,17 @@ def flore_on_grid_click_species_mode(id_area, active_tab, cd_nom, is_open):
         return dash.no_update, dash.no_update
     if not id_area or not cd_nom:
         return dash.no_update, dash.no_update
-    
-    
+
     # Charger les observations du taxon sélectionné
     observations = get_observations_of_cd_nom(cd_nom)
-    
+
     # Charger la géométrie de la maille sélectionnée
     geom_4326 = None
     if id_area:
         geom_4326 = get_grid_geometry(id_area)
-    
+
     return not is_open, create_obs_map(observations, geom_4326=geom_4326)
+
 
 # --- Carte : mode géographique ---
 @callback(
@@ -244,6 +272,7 @@ def flore_on_grid_click(n_clicks):
 
 # Panneau droit: affiche observations ou Espèce(s) non recontactée(s) ces 10 dernières années (quand on clique)
 
+
 # --- Panneau droit : mode géographique ---
 @callback(
     Output("right-panel", "children", allow_duplicate=True),
@@ -253,7 +282,9 @@ def flore_on_grid_click(n_clicks):
     Input("flore-left-tabs", "active_tab"),
     prevent_initial_call=True,
 )
-def flore_update_right_panel_geographic(id_area, all_grids_data, cd_nom_geo, active_tab):
+def flore_update_right_panel_geographic(
+    id_area, all_grids_data, cd_nom_geo, active_tab
+):
     """Met à jour le panneau droit pour le mode géographique."""
     if active_tab != "tab-geographic":
         return dash.no_update
@@ -311,22 +342,21 @@ def flore_on_species_click_geo(n_clicks, is_open, current_id_area):
     # si tous les valeur de ce tableau valent None, alors il n'y a pas eu de click utilisateur, mais un evenement déclenché par la création du composant
     if all(x is None for x in n_clicks):
         return dash.no_update, dash.no_update
-    
 
     trigger_id = ctx.triggered_id
-    if isinstance(trigger_id, dict) and trigger_id.get("type") == "unrecontacted-species-btn":
+    if (
+        isinstance(trigger_id, dict)
+        and trigger_id.get("type") == "unrecontacted-species-btn"
+    ):
         cd_nom = trigger_id.get("cd_nom")
-        
+
         observations = get_observations_of_cd_nom(cd_nom)
-        
+
         # Charger la géométrie de la maille sélectionnée depuis la base de données
         geom_4326 = None
         if current_id_area:
             geom_4326 = get_grid_geometry(current_id_area)
-        
+
         return not is_open, create_obs_map(observations, geom_4326=geom_4326)
 
     return dash.no_update, dash.no_update
-
-
-

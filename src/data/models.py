@@ -1,4 +1,5 @@
 """Modèles de données pour les aires et visites."""
+
 from dataclasses import dataclass, asdict
 from typing import Dict, Any, Optional, List
 from datetime import datetime

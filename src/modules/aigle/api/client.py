@@ -1,4 +1,5 @@
 """Client pour les APIs GeoNature - Module Aigle."""
+
 import requests
 from datetime import datetime
 from typing import List, Dict, Any, Optional

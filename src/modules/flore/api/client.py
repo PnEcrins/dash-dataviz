@@ -1,4 +1,5 @@
 """API client PostgreSQL pour module Flore."""
+
 import json
 import logging
 import psycopg2
@@ -201,10 +202,10 @@ def get_unrecontacted_species_in_grid(id_area: int) -> List[Dict[str, Any]]:
 
 def get_grid_geometry(id_area: int) -> str:
     """Récupère la géométrie GeoJSON d'une maille par son id_area en tant que Feature.
-    
+
     Args:
         id_area: ID de la maille
-        
+
     Returns:
         Feature GeoJSON (string) ou None si pas trouvée
     """
@@ -213,28 +214,24 @@ def get_grid_geometry(id_area: int) -> str:
     FROM ref_geo.l_areas
     WHERE id_area = %s
     """
-    
+
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         cur = conn.cursor(cursor_factory=RealDictCursor)
         cur.execute(query, (id_area,))
-        
+
         row = cur.fetchone()
         cur.close()
         conn.close()
-        
-        if row and row['geom']:
+
+        if row and row["geom"]:
             # Parser la géométrie et la wrapper dans une Feature
-            geom = json.loads(row['geom'])
-            feature = {
-                "type": "Feature",
-                "geometry": geom,
-                "properties": {}
-            }
+            geom = json.loads(row["geom"])
+            feature = {"type": "Feature", "geometry": geom, "properties": {}}
             return feature
         else:
             return None
-            
+
     except psycopg2.Error as e:
         logger.error(f"Erreur BDD géométrie maille {id_area}: {e}")
         return None

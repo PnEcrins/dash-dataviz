@@ -1,4 +1,5 @@
 """Composant carte Leaflet interactive - Module Aigle."""
+
 from typing import Any, Dict, List, Optional
 import json
 import dash_leaflet as dl
@@ -6,7 +7,9 @@ from dash import html
 from src.components.maps import create_map
 
 
-def create_map_component(sites: List[Dict[str, Any]], selected_site_id: Optional[int] = None) -> html.Div:
+def create_map_component(
+    sites: List[Dict[str, Any]], selected_site_id: Optional[int] = None
+) -> html.Div:
     """Crée le composant carte Leaflet avec CircleMarkers.
 
     Args:
@@ -19,7 +22,7 @@ def create_map_component(sites: List[Dict[str, Any]], selected_site_id: Optional
 
     markers = []
     for site in sites:
-        geom_data = site.get('geom') or site.get('st_asgeojson')
+        geom_data = site.get("geom") or site.get("st_asgeojson")
         if not geom_data:
             continue
 
@@ -43,11 +46,11 @@ def create_map_component(sites: List[Dict[str, Any]], selected_site_id: Optional
 
         lat, lon = coords[1], coords[0]
 
-        is_valid = site.get('aire_valid')
+        is_valid = site.get("aire_valid")
         color = "green" if is_valid else "red"
         fill_color = "green" if is_valid else "red"
 
-        site_id = site.get('id_base_site')
+        site_id = site.get("id_base_site")
         is_selected = site_id == selected_site_id
         radius = 10 if is_selected else 6
         weight = 3 if is_selected else 2
@@ -56,7 +59,9 @@ def create_map_component(sites: List[Dict[str, Any]], selected_site_id: Optional
         marker = dl.CircleMarker(
             center=[lat, lon],
             radius=radius,
-            children=dl.Popup(f"{site.get('base_site_name')} ({site.get('base_site_code')})"),
+            children=dl.Popup(
+                f"{site.get('base_site_name')} ({site.get('base_site_code')})"
+            ),
             color=color,
             weight=weight,
             opacity=opacity,
@@ -72,5 +77,3 @@ def create_map_component(sites: List[Dict[str, Any]], selected_site_id: Optional
         center=[45.0, 6.2],
         zoom=8,
     )
-
-

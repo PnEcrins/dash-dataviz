@@ -1,4 +1,5 @@
 """Composant panneau des visites - Module Aigle."""
+
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from dash import html
@@ -11,7 +12,7 @@ def format_visit_date(date_str: str) -> str:
         date = datetime.strptime(date_str, "%Y-%m-%d")
         return date.strftime("%d/%m/%Y")
     except (ValueError, TypeError):
-        return date_str or 'N/A'
+        return date_str or "N/A"
 
 
 def create_visits_panel(
@@ -47,7 +48,9 @@ def create_visits_panel(
                     [
                         html.Div(
                             [
-                                html.Strong(format_visit_date(visit.get('visit_date', ''))),
+                                html.Strong(
+                                    format_visit_date(visit.get("visit_date", ""))
+                                ),
                                 html.Br(),
                                 html.Small(
                                     f"Observateurs: {visit.get('observers_txt') or 'N/A'}",
@@ -55,10 +58,14 @@ def create_visits_panel(
                                 ),
                             ]
                         ),
-                        html.Hr() if visit.get('comments') else None,
-                        html.Small(visit.get('comments'), className="d-block text-muted")
-                        if visit.get('comments')
-                        else None,
+                        html.Hr() if visit.get("comments") else None,
+                        (
+                            html.Small(
+                                visit.get("comments"), className="d-block text-muted"
+                            )
+                            if visit.get("comments")
+                            else None
+                        ),
                     ],
                     style={"padding": "10px"},
                 )
@@ -72,9 +79,13 @@ def create_visits_panel(
             html.H5("Visites", className="mb-2"),
             html.P(f"pour {site_name}", className="small text-muted mb-3"),
             html.Div(
-                visit_cards if visit_cards else html.P(
-                    "Aucune visite pour cette année",
-                    className="text-muted",
+                (
+                    visit_cards
+                    if visit_cards
+                    else html.P(
+                        "Aucune visite pour cette année",
+                        className="text-muted",
+                    )
                 ),
                 id="visits-list",
                 style={

@@ -372,3 +372,62 @@ body {
         transform: rotate(360deg);
     }
 }
+
+/* === CUSTOM MARKERS === */
+/* Base marker used by dl.DivMarker with class `custom-marker` */
+.custom-marker {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    box-sizing: border-box;
+    vertical-align: middle;
+    transform: translateY(-2px);
+    transition: transform 120ms ease, box-shadow 160ms ease, opacity 120ms ease;
+    cursor: pointer;
+}
+
+/* Color variants: set marker fill color via CSS variable */
+
+.custom-marker.custom-marker-red {
+    background-color: #ff3b30;
+}
+
+.custom-marker.custom-marker-blue {
+    background-color: #007bff;
+}
+
+/* Default: circular marker */
+.custom-marker {
+    border-radius: 50%;
+    border: 2px solid rgba(0,0,0,0.4);
+}
+
+/* Triangle variant (useful if you add class `triangle` to the marker element) */
+.custom-marker.triangle {
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 16px solid var(--marker-color, #007bff);
+    background: none;
+    border-radius: 0;
+    border: none;
+}
+
+/* Halo modifier for non-point markers: add class `custom-marker--halo` or `halo` on the same element */
+.custom-marker-halo {
+    box-shadow: 0 0 12px 6px rgba(var(--marker-rgb, 0,123,255), 0.18);
+}
+
+/* Hover / active affordances */
+.custom-marker:hover {
+    transform: translateY(-3px) scale(1.05);
+}
+.custom-marker:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
+/* Ensure marker popup anchor doesn't get hidden by pointer events */
+.leaflet-marker-icon.custom-marker {
+    pointer-events: auto;
+}
