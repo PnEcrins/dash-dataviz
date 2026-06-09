@@ -74,7 +74,7 @@ def base_modal_component():
                                         },
                                     ),
                                     html.Small(
-                                        "Obseervation non précise (centroid de polygone / ligne)"
+                                        "Observation non précise (centroid de polygone / ligne)"
                                     ),
                                 ],
                                 style={"display": "flex", "alignItems": "center"},
