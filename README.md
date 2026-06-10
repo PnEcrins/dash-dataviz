@@ -2,10 +2,12 @@
 
 Visualisation interactive des données issues de différentes sources (GeoNature, API etc.)
 
-### Modules disponivles
+### Modules disponibles
 
-- Visualisation des données aigle (en construction)
-- Interface de visualisation et de recherche de taxons prioriatires non contactés depuis plus de 10 ans
+- Visualisation des données aigle depuis GeoNature Monitoring (en construction)
+- Interface de visualisation et de recherche de taxons prioritaires non contactés depuis plus de 10 ans, à partir de données GeoNature Flore prioritaire
+
+![Screenshot](dash-dataviz-screenshot.jpg)
 
 ## Installation
 
@@ -36,8 +38,8 @@ pip install -r requirements.txt
 
 ### Architecture
 
-- **Desktop**: 3 colonnes côte à côte (3-6-3), hauteur fixe 100vh, scroll interne par panneau
-- **Mobile**: Colonnes empilées verticalement, scroll page entière, carte proportionnelle
+- **Desktop** : 3 colonnes côte à côte (3-6-3), hauteur fixe 100vh, scroll interne par panneau
+- **Mobile** : Colonnes empilées verticalement, scroll page entière, carte proportionnelle
 
 Voir `assets/style.css` pour les règles CSS complètes organisées par élément.
 
@@ -45,11 +47,13 @@ Voir `assets/style.css` pour les règles CSS complètes organisées par élémen
 
 Le dossier `deploy` contient des exemples :
 
-- configuration apache
+- configuration Apache
 - configuration systemd (à adapter)
 
+  ```sh
   mkdir -p /var/log/dash-dataviz
   chown <user>:<user> /var/log/dash-dataviz
   systemctl daemon-reload
   systemctl enable dash-dataviz.service
   systemctl start dash-dataviz.service
+  ```
